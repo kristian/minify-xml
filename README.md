@@ -2,7 +2,7 @@
 
 `minify-xml` is a lightweight and fast XML minifier for NodeJS with a command line.
 
-Existing XML minifiers commonly only remove comments and whitespace between tags. This minifier also includes minification of tags, e.g. by collapsing the whitespace between multiple attributes. Additionally the minifier is able to remove any unused namespace declarations. `minify-xml` is based on regular expressions and thus executes blazingly fast.
+Existing XML minifiers, such as `pretty-data` often do a pretty (*phun intended*) bad job minifying XML in usually only removing comments and whitespace between tags. `minify-xml` on the other hand also includes minification of tags, e.g. by collapsing the whitespace between multiple attributes and further minifications, such as the removal of unused namespace declarations. `minify-xml` is based on regular expressions and thus executes blazingly fast.
 
 ## Installation
 
@@ -20,10 +20,10 @@ const xml = `<Tag xmlns:used="used_ns" xmlns:unused="unused_ns">
         With the default options all comments will be removed and whitespace
         in tags, like spaces between attributes, will be collapsed / removed
     -->
-    <AnotherTag attributeA   =   "..."   attributeB    =   "..."   />
+    <AnotherTag attributeA   =   "..."   attributeB    =   "..." />
 
     <!-- By default any unused namespaces will be removed from the tags: -->
-    <used:NamespaceTag>
+    <used:NamespaceTag used:attribute = "...">
         any valid element content is left unaffected (strangely enough = " ... "
         and even > are valid characters in XML, only &lt; must always be encoded)
     </used:NamespaceTag>
@@ -35,7 +35,7 @@ console.log(minifyXML(code));
 This outputs the minified XML:
 
 ```xml
-<Tag xmlns:used="used_ns"><AnotherTag attributeA="..." attributeB="..."/><used:NamespaceTag>
+<Tag xmlns:used="used_ns"><AnotherTag attributeA="..." attributeB="..."/><used:NamespaceTag used:attribute="...">
         any valid element content is left unaffected (strangely enough = " ... "
         and even > are valid characters in XML, only &lt; must always be encoded)
     </used:NamespaceTag></Tag>
@@ -55,7 +55,7 @@ require("minify-xml").minify(`<tag/>`, { ... });
 
 - `collapseWhitespaceInTags` (default: `true`): Collapse whitespace in tags like `<anyTag   attributeA   =   "..."   attributeB    =   "..."   />`.
 
-- `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_url" />`.
+- `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_url" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
 
 ## CLI
 

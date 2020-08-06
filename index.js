@@ -3,16 +3,16 @@ function escapeRegExp(string) {
 }
 function findAllMatches(string, regexp, group) {
     var match, matches = [];
-    while ((match = regexp.exec(string))) {
+    while ((match = regexp.exec(string))) { if (match[group]) {
         matches.push(typeof group === 'number' ? match[group] : match);
-    } return matches;
+    } } return matches;
 }
 
-// note: this funky looking positive backward reference regular expression is necessary to match contents inside of tags <...>.
-// this is due to that literally any character except <&" is allowed to be put next to everywhere in XML. as even > is a allowed
+// note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
+// is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
-const emptyRegexp = new RegExp(), inTagPattern = /(?<=<[^=\s>]+(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\1)/;
-function replaceInTag(xml, regexp, lookbehind, replacement) {
+const emptyRegexp = new RegExp(), inTagPattern = /(?<=<[^\s>]+(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\1)/;
+function replaceInTags(xml, regexp, lookbehind, replacement) {
     if (!replacement) {
         replacement = lookbehind;
         lookbehind = emptyRegexp;
@@ -29,16 +29,16 @@ const defaultOptions = {
 };
 
 module.exports = {
-    minify: function(xml, userOptions) {
-        // mix in the user options
-        const options = {
+    minify: function(xml, options) {
+        // apply the default options
+        options = {
             ...defaultOptions,
-            ...(userOptions || {})
+            ...(options || {})
         };
 
         // remove XML comments <!-- ... -->
         if (options.removeComments) {
-            xml = xml.replace(/<![ \r\n\t]*(--([^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, String());
+            xml = xml.replace(/<![ \r\n\t]*(?:--(?:[^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, String());
         }
 
         // remove whitespace between tags <anyTag />   <anyOtherTag />
@@ -48,20 +48,23 @@ module.exports = {
 
         // remove / collapse multiple whitespace in tags <anyTag   attributeA   =   "..."   attributeB    =   "..."   />
         if (options.collapseWhitespaceInTags) {
-            xml = replaceInTag(xml, /\s*=\s*/, /\s+[^=\s>]+/, "="); // remove leading / tailing whitespace around = "..."
-            xml = replaceInTag(xml, /\s+/, " "); // collapse whitespace between attributes
-            xml = replaceInTag(xml, /\s*(?=\/>)/, String()); // remove whitespace before closing > /> of tags
+            xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, "="); // remove leading / tailing whitespace around = "..."
+            xml = replaceInTags(xml, /\s+/, " "); // collapse whitespace between attributes
+            xml = replaceInTags(xml, /\s*(?=\/>)/, String()); // remove whitespace before closing > /> of tags
         }
 
-        // remove namespace declarations which are not used anywhere in the document
+        // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
+        // thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree)
         if (options.removeUnusedNamespaces) {
             // the search for all xml namespaces could result in some "fake" namespaces (e.g. if a xmlns:... string is found inside the content of an element), as we do not
             // limit the search to the inside of tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
-            var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = findAllMatches(xml, /<([^\s\/]+):/g, 1),
-                unused = all.filter(ns => !used.includes(ns));
+            var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = [
+                ...findAllMatches(xml, /<([^\s\/]+):/g, 1), // look for all tags with namespaces
+                ...findAllMatches(xml, /<[^\s>]+(?:\s+(?:([^=\s>]+):[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
+            ], unused = all.filter(ns => !used.includes(ns));
 
-            if (used.length) {
-                xml = replaceInTag(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), String());
+            if (unused.length) {
+                xml = replaceInTags(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), String());
             }
         }
 
