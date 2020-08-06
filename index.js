@@ -1,3 +1,5 @@
+"use strict"; // we are overriding arguments, so this is important!
+
 function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
@@ -28,6 +30,26 @@ const defaultOptions = {
     removeUnusedNamespaces: true
 };
 
+function ignoreCData(replacement) {
+    return function(match, offset, string, groups) {
+        // the interface of replacement functions contains any number of arguments at the second position, for contents of capturing groups.
+        // the last argument is either an object (for browsers supporting named capturing groups) or the examined string otherwise.
+        var argument = arguments.length - 1, captures;
+        groups = typeof arguments[argument] === "object" ? arguments[argument--] : undefined;
+        string = arguments[argument--]; offset = arguments[argument--];
+        captures = Array.prototype.slice.call(arguments, 1, argument + 1);
+
+        // check if the offset lies inside of a CData section
+        if (/<!\[CDATA\[(?!.*]]>)/.test(string.substr(0, offset))) {
+            return match; // if so do not replace anything
+        }
+
+        // otherwise execute the replacement of the capturing groups manually
+        return captures ? replacement.replace(/(?<!\$)\$(\d+|\&)/g, (group, number) =>
+            ["0", "&"].includes(number) ? match : captures[parseInt(number - 1)]) : replacement;
+    };
+}
+
 module.exports = {
     minify: function(xml, options) {
         // apply the default options
@@ -38,19 +60,19 @@ module.exports = {
 
         // remove XML comments <!-- ... -->
         if (options.removeComments) {
-            xml = xml.replace(/<![ \r\n\t]*(?:--(?:[^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, String());
+            xml = xml.replace(/<![ \r\n\t]*(?:--(?:[^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, ignoreCData(String()));
         }
 
         // remove whitespace between tags <anyTag />   <anyOtherTag />
         if (options.removeWhitespaceBetweenTags) {
-            xml = xml.replace(/>\s{0,}</g, "><");
+            xml = xml.replace(/>\s{0,}</g, ignoreCData("><"));
         }
 
         // remove / collapse multiple whitespace in tags <anyTag   attributeA   =   "..."   attributeB    =   "..."   />
         if (options.collapseWhitespaceInTags) {
-            xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, "="); // remove leading / tailing whitespace around = "..."
-            xml = replaceInTags(xml, /\s+/, " "); // collapse whitespace between attributes
-            xml = replaceInTags(xml, /\s*(?=\/>)/, String()); // remove whitespace before closing > /> of tags
+            xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, ignoreCData("=")); // remove leading / tailing whitespace around = "..."
+            xml = replaceInTags(xml, /\s+/, ignoreCData(" ")); // collapse whitespace between attributes
+            xml = replaceInTags(xml, /\s*(?=\/>)/, ignoreCData(String())); // remove whitespace before closing > /> of tags
         }
 
         // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
@@ -59,12 +81,12 @@ module.exports = {
             // the search for all xml namespaces could result in some "fake" namespaces (e.g. if a xmlns:... string is found inside the content of an element), as we do not
             // limit the search to the inside of tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
             var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = [
-                ...findAllMatches(xml, /<([^\s\/]+):/g, 1), // look for all tags with namespaces
+                ...findAllMatches(xml, /<([^\s\/]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
                 ...findAllMatches(xml, /<[^\s>]+(?:\s+(?:([^=\s>]+):[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
             ], unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {
-                xml = replaceInTags(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), String());
+                xml = replaceInTags(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), ignoreCData(String()));
             }
         }
 

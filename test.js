@@ -12,6 +12,8 @@ const xml = `<Tag xmlns:used="used_ns" xmlns:unused="unused_ns">
         any valid element content is left unaffected (strangely enough = " ... "
         and even > are valid characters in XML, only &lt; must always be encoded)
     </used:NamespaceTag>
+
+    <![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]>
 </Tag>`;
 
 console.log(minifyXML(xml));
