@@ -17,10 +17,11 @@ const minifyXML = require("minify-xml").minify;
 
 const xml = `<Tag xmlns:used="used_ns" xmlns:unused="unused_ns">
     <!--
-        With the default options all comments will be removed and whitespace
-        in tags, like spaces between attributes, will be collapsed / removed
+        With the default options all comments will be removed, whitespace in
+        tags, like spaces between attributes, will be collapsed / removed and
+        elements without any content will be collapsed to empty tag elements
     -->
-    <AnotherTag attributeA   =   "..."   attributeB    =   "..." />
+    <AnotherTag attributeA   =   "..."   attributeB    =   "..."></AnotherTag>
 
     <!-- By default any unused namespaces will be removed from the tags: -->
     <used:NamespaceTag used:attribute = "...">
@@ -57,6 +58,8 @@ require("minify-xml").minify(`<tag/>`, { ... });
 - `removeWhitespaceBetweenTags` (default: `true`): Remove whitespace between tags like `<anyTag />   <anyOtherTag />`.
 
 - `collapseWhitespaceInTags` (default: `true`): Collapse whitespace in tags like `<anyTag   attributeA   =   "..."   attributeB    =   "..."   />`.
+
+- `collapseEmptyElements` (default: `true`): Collapse empty elements like `<anyTag anyAttribute = "..."></anyTag>`
 
 - `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_url" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
 

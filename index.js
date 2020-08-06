@@ -27,6 +27,7 @@ const defaultOptions = {
     removeComments: true,
     removeWhitespaceBetweenTags: true,
     collapseWhitespaceInTags: true,
+    collapseEmptyElements: true,
     removeUnusedNamespaces: true
 };
 
@@ -73,6 +74,11 @@ module.exports = {
             xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, ignoreCData("=")); // remove leading / tailing whitespace around = "..."
             xml = replaceInTags(xml, /\s+/, ignoreCData(" ")); // collapse whitespace between attributes
             xml = replaceInTags(xml, /\s*(?=\/>)/, ignoreCData(String())); // remove whitespace before closing > /> of tags
+        }
+
+        // collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..."></anyTag>
+        if (options.collapseEmptyElements) {
+            xml = xml.replace(/<([^\s>]+)([^<]*?)><\/\1>/g, ignoreCData("<$1$2/>"));
         }
 
         // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
