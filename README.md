@@ -32,7 +32,7 @@ const xml = `<Tag xmlns:used="used_ns" xmlns:unused="unused_ns">
     <![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]>
 </Tag>`;
 
-console.log(minifyXML(code));
+console.log(minifyXML(xml));
 ```
 
 This outputs the minified XML:
