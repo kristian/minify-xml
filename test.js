@@ -6,7 +6,7 @@ const xml = `<Tag xmlns:used="used_ns" xmlns:unused="unused_ns">
         tags, like spaces between attributes, will be collapsed / removed and
         elements without any content will be collapsed to empty tag elements
     -->
-    <AnotherTag attributeA   =   "..."   attributeB    =   "..."></AnotherTag>
+    <AnotherTag attributeA   =   "..."   attributeB   =   "..."    ></AnotherTag>
 
     <!-- By default any unused namespaces will be removed from the tags: -->
     <used:NamespaceTag used:attribute = "...">
