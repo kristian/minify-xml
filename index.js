@@ -73,7 +73,7 @@ module.exports = {
         if (options.collapseWhitespaceInTags) {
             xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, ignoreCData("=")); // remove leading / tailing whitespace around = "..."
             xml = replaceInTags(xml, /\s+/, ignoreCData(" ")); // collapse whitespace between attributes
-            xml = replaceInTags(xml, /\s*(?=\/>)/, ignoreCData(String())); // remove whitespace before closing > /> of tags
+            xml = replaceInTags(xml, /\s*(?=\/?>)/, ignoreCData(String())); // remove whitespace before closing > /> of tags
         }
 
         // collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..."></anyTag>
