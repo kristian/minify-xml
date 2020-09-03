@@ -28,7 +28,8 @@ const defaultOptions = {
     removeWhitespaceBetweenTags: true,
     collapseWhitespaceInTags: true,
     collapseEmptyElements: true,
-    removeUnusedNamespaces: true
+    removeUnusedNamespaces: true,
+    ignoreCData: true
 };
 
 function ignoreCData(replacement) {
@@ -59,26 +60,29 @@ module.exports = {
             ...(options || {})
         };
 
+        // decide on whether to use the ignoreCData replacement function or not, to improve performance
+        const replacer = options.ignoreCData && xml.includes("<![CDATA[") ? ignoreCData : replacement => replacement;
+
         // remove XML comments <!-- ... -->
         if (options.removeComments) {
-            xml = xml.replace(/<![ \r\n\t]*(?:--(?:[^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, ignoreCData(String()));
+            xml = xml.replace(/<![ \r\n\t]*(?:--(?:[^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)>/g, replacer(String()));
         }
 
         // remove whitespace between tags <anyTag />   <anyOtherTag />
         if (options.removeWhitespaceBetweenTags) {
-            xml = xml.replace(/>\s{0,}</g, ignoreCData("><"));
+            xml = xml.replace(/>\s{0,}</g, replacer("><"));
         }
 
         // remove / collapse multiple whitespace in tags <anyTag   attributeA   =   "..."   attributeB    =   "..."   />
         if (options.collapseWhitespaceInTags) {
-            xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, ignoreCData("=")); // remove leading / tailing whitespace around = "..."
-            xml = replaceInTags(xml, /\s+/, ignoreCData(" ")); // collapse whitespace between attributes
-            xml = replaceInTags(xml, /\s*(?=\/?>)/, ignoreCData(String())); // remove whitespace before closing > /> of tags
+            xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, replacer("=")); // remove leading / tailing whitespace around = "..."
+            xml = replaceInTags(xml, /\s+/, replacer(" ")); // collapse whitespace between attributes
+            xml = replaceInTags(xml, /\s*(?=\/?>)/, replacer(String())); // remove whitespace before closing > /> of tags
         }
 
         // collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..."></anyTag>
         if (options.collapseEmptyElements) {
-            xml = xml.replace(/<([^\s>]+)([^<]*?)><\/\1>/g, ignoreCData("<$1$2/>"));
+            xml = xml.replace(/<([^\s>]+)([^<]*?)><\/\1>/g, replacer("<$1$2/>"));
         }
 
         // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
@@ -92,7 +96,7 @@ module.exports = {
             ], unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {
-                xml = replaceInTags(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), ignoreCData(String()));
+                xml = replaceInTags(xml, new RegExp(`\\s+xmlns:(?:${ unused.map(escapeRegExp).join("|") })=(?:"[^"]*"|'[^']*')`), replacer(String()));
             }
         }
 
