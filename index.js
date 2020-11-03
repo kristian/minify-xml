@@ -82,7 +82,7 @@ module.exports = {
 
         // collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..."></anyTag>
         if (options.collapseEmptyElements) {
-            xml = xml.replace(/<([^\s>]+)([^<]*?)><\/\1>/g, replacer("<$1$2/>"));
+            xml = xml.replace(/<([^<\s>]+)([^<]*?)><\/\1>/g, replacer("<$1$2/>"));
         }
 
         // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
@@ -91,8 +91,8 @@ module.exports = {
             // the search for all xml namespaces could result in some "fake" namespaces (e.g. if a xmlns:... string is found inside the content of an element), as we do not
             // limit the search to the inside of tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
             var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = [
-                ...findAllMatches(xml, /<([^\s\/]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
-                ...findAllMatches(xml, /<[^\s>]+(?:\s+(?:([^=\s>]+):[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
+                ...findAllMatches(xml, /<([^<\s\/]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
+                ...findAllMatches(xml, /<[^<\s>]+(?:\s+(?:([^=\s>]+):[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
             ], unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {
