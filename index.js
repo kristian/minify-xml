@@ -13,11 +13,18 @@ function findAllMatches(string, regexp, group) {
 // note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
 // is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
-const emptyRegexp = new RegExp(), inTagPattern = /(?<=<[^\s>]+(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\1)/;
+const emptyRegexp = new RegExp(), inTagPattern = /(?<=<[^\s>]*(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\1)/;
+function findAllMatchesInTags(xml, regexp, lookbehind, group) {
+    if (!(lookbehind instanceof RegExp)) {
+        group = lookbehind; lookbehind = emptyRegexp;
+    }
+
+    return findAllMatches(xml, new RegExp(inTagPattern.source.replace("\\1",
+        lookbehind.source) + regexp.source, "g"), group);
+}
 function replaceInTags(xml, regexp, lookbehind, replacement) {
-    if (!replacement) {
-        replacement = lookbehind;
-        lookbehind = emptyRegexp;
+    if (!(lookbehind instanceof RegExp)) {
+        replacement = lookbehind; lookbehind = emptyRegexp;
     }
     
     return xml.replace(new RegExp(inTagPattern.source.replace("\\1", lookbehind.source) + regexp.source, "g"), replacement);
@@ -92,7 +99,7 @@ module.exports = {
             // limit the search to the inside of tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
             var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = [
                 ...findAllMatches(xml, /<([^<\s\/]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
-                ...findAllMatches(xml, /<[^<\s>]+(?:(?:\s+(?:([^=\s>]+):)?[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
+                ...findAllMatchesInTags(xml, /(?:\s+(?:([^=\s>]+):[^=\s>]+))/, 1) // look for all attributes with namespaces
             ], unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {

@@ -1,0 +1,1 @@
+<Tag xmlns:used="used_ns" xmlns:also_used="also_used_ns" xmlns:again_used="again_used_ns"><used:NamespaceTag also_used:attribute="..." otherAttribute='..' again_used:lastAttribute="..."/></Tag>
