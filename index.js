@@ -92,7 +92,7 @@ module.exports = {
             // limit the search to the inside of tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
             var all = findAllMatches(xml, /\sxmlns:([^\s\/]+)=/g, 1), used = [
                 ...findAllMatches(xml, /<([^<\s\/]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
-                ...findAllMatches(xml, /<[^<\s>]+(?:\s+(?:([^=\s>]+):[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
+                ...findAllMatches(xml, /<[^<\s>]+(?:(?:\s+(?:([^=\s>]+):)?[^=\s>]+)\s*=\s*(?:"[^"]*"|'[^']*'))*/g, 1) // look for all attributes with namespaces
             ], unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {
