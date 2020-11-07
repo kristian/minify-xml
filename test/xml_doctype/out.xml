@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<!DOCTYPE DocType [
+  <!ELEMENT DocType (#PCDATA)>
+]>
+<DocType/>

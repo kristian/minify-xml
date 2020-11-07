@@ -1,6 +1,6 @@
 {
   "name": "minify-xml",
-  "version": "2.1.5",
+  "version": "2.2.0",
   "description": "Fast XML minifier / compressor / uglifier with a command-line",
   "keywords": [
     "XML",
@@ -16,7 +16,7 @@
   "main": "index.js",
   "bin": "cli.js",
   "scripts": {
-    "test": "ava"
+    "test": "nyc ava"
   },
   "files": [
     "cli.js"
@@ -41,10 +41,11 @@
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "meow": "^7.0.1"
+    "meow": "^8.0.0"
   },
   "devDependencies": {
     "ava": "^3.13.0",
-    "glob": "^7.1.6"
+    "glob": "^7.1.6",
+    "nyc": "^15.1.0"
   }
 }

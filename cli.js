@@ -29,12 +29,11 @@ if (!file) {
 	cli.showHelp(); // this exits the process.
 }
 
-const xml = fs.readFileSync(file, "utf8").toString();
-const minified = minify(xml).trimEnd();
+const xml = minify(fs.readFileSync(file, "utf8"));
 
 if (cli.flags.inPlace) {
 	console.log(`Writing to ${file}`);
-	fs.writeFileSync(file, minified);
+	fs.writeFileSync(file, xml, "utf8");
 } else {
-	process.stdout.write(minified);
+	process.stdout.write(xml);
 }

@@ -1,1 +1,16 @@
-<anyTag><!-- comment --></anyTag>
+<!-- 
+   multi line comment above first tag
+-->
+<anyTag><!-- comment -->
+<!--- -->
+<!-- 
+
+
+    
+-->
+<!--<!->-->
+</anyTag>
+         <!--your comment-->
+<!--  
+   multi line comment below last tag
+   -->

@@ -1,0 +1,18 @@
+<Tag
+xmlns:n="ns1"
+xmlns:a="ns2"
+xmlns:c="ns3"
+xmlns:b="b"
+xmlns:x="x">
+    <n:NamespaceTag
+
+        a:attribute = "..." otherAttribute = 
+
+        '..'
+        
+        b:lastAttribute="..."/>
+
+    <c:AnotherNamespaceTag      attr="1" />
+    <c:AnotherNamespaceTag/>
+    <x:DontChange/>
+</Tag>

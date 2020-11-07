@@ -1,0 +1,3 @@
+<ns1:Tag xmlns="unused_default_ns" xmlns:ns1="ns1" xmlns:ns2="ns2" ns1:ATTR="ns1_attr_value">
+    <ns2:Tag attr="in_ns2" />
+</ns1:Tag>

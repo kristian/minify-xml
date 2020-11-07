@@ -1,0 +1,36 @@
+<Tag>
+<Tag     xmlns:test="hello" xmlns:test2  =   'hello'    xmlns:test3   =  'hello'>
+<Tag attr="... > ..."   >
+<Tag attr="... > ..."    />
+<Tag attr="... > ..." attr2="... > ...">
+<Tag attr="... > ..." attr1='test' attr2="... > ..."/>
+test <Tag><Tag attr="... > ..."> test <Tag     attr  =   "... > .'   =  '.."    test= "abc" test=""    /> test <Tag attr   =   "... > ..."    attr2="... > ..."   > test <Tag attr="... > ..." attr2="... > ..."/> test
+<Tag> conent <Tag/>  test  <Tag> hel>   lo </Tag>
+<Tag>   >   </Tag>
+<Tag>      </Tagfsdfd>    </Tag>
+<Tag test3:test="hello" ns2:test="hellok">   test   test    </Tag>
+
+<ns:Tag></ns:Tag>
+<!-- \
+
+- - - 
+
+- -->  <Tag>
+</Test   >
+</Tagfsdfd>    </Tag>
+<!- \
+
+- - - 
+
+- ->  <Tag>
+</Tag>
+<Tag></Tag>
+<Tag/></Tag>
+<Tag test="tag"
+
+test="123"
+
+></Tag>
+</Tag></Tag>
+<Tag    ></Tag   >
+<Tag    abc = " ...    >  ..."></Tag>

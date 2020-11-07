@@ -1,0 +1,78 @@
+<!-- remove comments -->
+<!-- <!-
+
+    remove multi line
+
+-> -->
+<!---->
+<!-- remove unused namespaces and shorten the rest -->
+<NS:ROOT xmlns:NS="root" xmlns:ns="remove">
+    <!-- remove whitespace between tags -->
+    <a><a> </a> <a/> <a/> <a> </a></a>
+    <a  attr1=" > /> = \ / : "  attr2 =" />>  > /> = \ / : "  NS:ATTR= " > /> = \ / :  >/> "  attr4 = ">>"  NS:ATTR2="" ><a attr1=" > /> "  attr2 =" />> "  NS:ATTR= " >/> "  attr4 = ">>"  NS:ATTR2="" > </a  > <a attr1=" > /> "  attr2 =" />> "  NS:ATTR= " >/> "  attr4 = ">>"  NS:ATTR2="" /> <a/> <a attr1=" > /> "  attr2 =" />> "  NS:ATTR= " >/> "  attr4 = ">>"  NS:ATTR2="" > </a></a>
+    <a  attr1=" > /> "  attr2 =" />> "  NS:ATTR= "   > /> = \ / :>/> "  attr4 = ">> > /> = \ / : "  NS:ATTR2="" >
+        
+        <a attr1=" > /> "  attr2 =" />>  > /> = \ / : "  NS:ATTR= "  > /> = \ / : >/> "  attr4 = ">>"  NS:ATTR2="" >
+
+        </a 
+        
+        > <a
+        attr1=" > />  > /> = \ / :" 
+        
+        attr2 =" />>  > /> = \ / :" 
+        
+        NS:ATTR= " >/> > /> = \ / : "
+        
+        attr4 = ">>"  NS:ATTR2="" /> <a/>
+             <a attr1=" > /> "  attr2 =" />> "  NS:ATTR= " >/> "  attr4 = ">>"  NS:ATTR2="" >
+                <!-- comment -->
+             </a></a>
+
+    <!-- remove whitespace in tags -->
+    <NS:TAG
+
+        attr1
+           =    
+             " > /> = \ / : "    NS:attr1 =  
+             "  " attr3=""> </NS:TAG 
+             
+             ><tag></tag  ><tag  ></tag><tag  attr= " > /> = \ / :   "  attr2= " > /> = \ / :   "   > </tag><tag    attr     = " > /> = \ / :   "  attr2= " > /> = \ / :   "   />
+
+    <!-- collapse empty elements -->
+    <t><t><t><t><t></t></t></t></t></t>
+    <t    >
+
+    </t   >
+    <T    >
+
+    </T   >
+
+    <t attr1=" > /> "  attr2 =" />>  > /> = \ / : "  NS:ATTR= "  > /> = \ / : >/> "  attr4 = ">>"  NS:ATTR2="" >
+
+    </t >
+    <t attr1=" > /> " 
+         attr2 =" />>  > /> = \ / : "  NS:ATTR= "  > /> = \ / : >/> "  attr4 = ">>"  NS:ATTR2="" 
+         
+         >
+
+ </t>
+    <t NS:attr1="1" NS:attr2="" attr3=""></t>
+
+    <!-- trim whitespace from texts -->
+    <t>  test  </t><t> 
+        test  
+    </t><t>  
+        
+        test
+        <![CDATA[ test ]]>
+
+    </t><t> test</t><t>test</t><t>test </t>
+
+    <!-- callapse whitespace in tests -->
+    <c>  test  test  </c>
+    <c>  test  <![CDATA[ test ]]>  test  </c>
+    <c>  test
+        
+        
+        test  </c>
+</NS:ROOT>

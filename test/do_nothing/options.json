@@ -1,0 +1,11 @@
+{
+    "removeComments": false,
+    "removeWhitespaceBetweenTags": false,
+    "trimWhitespaceFromTexts": false,
+    "collapseWhitespaceInTexts": false,
+    "collapseWhitespaceInTags": false,
+    "collapseEmptyElements": false,
+    "removeUnusedNamespaces": false,
+    "shortenNamespaces": false,
+    "ignoreCData": false
+}
