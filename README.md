@@ -70,7 +70,9 @@ require("minify-xml").minify(`<tag/>`, { ... });
 
 - `collapseWhitespaceInTexts` (default: `false`): Collapse whitespace in elements containing text or a mixture of text and other elements (useful for (X)HTML) like `<anyTag>Hello  World</anyTag>`.
 
-- `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_url" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
+- `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_uri" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
+
+- `removeUnusedDefaultNamespace`(default: `true`): Removes any default namespace declaration like `<tag xmlns="any_uri"/>` in case there is no tag without a namespace in the whole document.
 
 - `shortenNamespaces` (default: `true`): Shortens namespaces, like `<tag xmlns:namespace="any_namespace">` to a minimal length, e.g. `<tag xmlns:n="any_namespace">`. First an attempt is made to shorten the existing namespace to one letter only (e.g. `namespace` is shortened to `n`), in case that letter is already taken, the shortest possible other namespace is used.
 
