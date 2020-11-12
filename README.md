@@ -4,6 +4,12 @@
 
 Existing XML minifiers, such as `pretty-data` often do a pretty (*phun intended*) bad job minifying XML in usually only removing comments and whitespace between tags. `minify-xml` on the other hand also includes minification of tags, e.g. by collapsing the whitespace between multiple attributes and further minifications, such as the removal of unused namespace declarations. `minify-xml` is based on regular expressions and thus executes blazingly fast.
 
+## Online
+
+Use this package online to minify XMLs in your browser, visit:
+
+> **[Minify-X.ML](https://minify-x.ml/)** (https://minify-x.ml/)
+
 ## Installation
 
 ```bash
@@ -91,7 +97,7 @@ minify-xml --in-place blog.atom
 
 XML minifier by [Kristian Kraljić](https://kra.lc/). Original package and CLI by [Mathias Bynens](https://mathiasbynens.be/).
 
-## Reporting bugs
+## Bugs
 
 Please file any issues [on Github](https://github.com/kristian/minify-xml/issues).
 
