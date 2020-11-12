@@ -8,7 +8,7 @@ Existing XML minifiers, such as `pretty-data` often do a pretty (*phun intended*
 
 Use this package online to minify XMLs in your browser, visit:
 
-> **[Minify-X.ML](https://minify-x.ml/)** (https://minify-x.ml/)
+**[Minify-X.ML](https://minify-x.ml/)** ([https://minify-x.ml/](https://minify-x.ml/))
 
 ## Installation
 
