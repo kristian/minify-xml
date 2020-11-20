@@ -72,17 +72,17 @@ require("minify-xml").minify(`<tag/>`, { ... });
 
 - `collapseEmptyElements` (default: `true`): Collapse empty elements like `<anyTag anyAttribute = "..."></anyTag>`.
 
-- `trimWhitespaceFromTexts` (default: `false`): Removes leading and tailing whitespace in elements containing text only or a mixture of text and other elements like `<anyTag>  Hello  <anyOtherTag/>  World  </anyTag>`.
+- `trimWhitespaceFromTexts` (default: `false`): Remove leading and tailing whitespace in elements containing text only or a mixture of text and other elements like `<anyTag>  Hello  <anyOtherTag/>  World  </anyTag>`.
 
 - `collapseWhitespaceInTexts` (default: `false`): Collapse whitespace in elements containing text or a mixture of text and other elements (useful for (X)HTML) like `<anyTag>Hello  World</anyTag>`.
 
-- `removeUnusedNamespaces` (default: `true`): Removes any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_uri" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
+- `removeUnusedNamespaces` (default: `true`): Remove any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_uri" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
 
-- `removeUnusedDefaultNamespace`(default: `true`): Removes any default namespace declaration like `<tag xmlns="any_uri"/>` in case there is no tag without a namespace in the whole document.
+- `removeUnusedDefaultNamespace`(default: `true`): Remove default namespace declaration like `<tag xmlns="any_uri"/>` in case there is no tag without a namespace in the whole document.
 
-- `shortenNamespaces` (default: `true`): Shortens namespaces, like `<tag xmlns:namespace="any_namespace">` to a minimal length, e.g. `<tag xmlns:n="any_namespace">`. First an attempt is made to shorten the existing namespace to one letter only (e.g. `namespace` is shortened to `n`), in case that letter is already taken, the shortest possible other namespace is used.
+- `shortenNamespaces` (default: `true`): Shorten namespaces, like `<tag xmlns:namespace="any_namespace">` to a minimal length, e.g. `<tag xmlns:n="any_namespace">`. First an attempt is made to shorten the existing namespace to one letter only (e.g. `namespace` is shortened to `n`), in case that letter is already taken, the shortest possible other namespace is used.
 
-- `ignoreCData` (default: `true`): Ignores any content inside of XML CData tags `<![CDATA[ any content ]]>`.
+- `ignoreCData` (default: `true`): Ignore any content inside of CData tags `<![CDATA[ any content ]]>`.
 
 ## CLI
 
@@ -92,6 +92,12 @@ You can run `minify-xml` from the command line to minify XML files:
 minify-xml sitemap.xml
 minify-xml blog.atom --in-place
 minify-xml view.xml --output view.min.xml
+```
+
+Use any of the options above like:
+
+```bash
+minify-xml index.html --collapse-whitespace-in-texts --ignore-cdata false
 ```
 
 ## Author
