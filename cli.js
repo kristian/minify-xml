@@ -11,11 +11,18 @@ const cli = meow(`
 
 	Options
 	  --in-place, -i Save the minified results to the original file
+	  --output, -o Save the minified results to a given output file
 
 	Examples
-	  $ minify-xml --in-place sitemap.xml
+	  $ minify-xml sitemap.xml --in-place
+	  $ minify-xml sitemap.xml --output sitemap.min.xml
 `, {
+	input: ["input"],
 	flags: {
+		output: {
+			type: "string",
+			alias: "o"
+		},
 		inPlace: {
 			type: "boolean",
 			alias: "i",
@@ -24,16 +31,18 @@ const cli = meow(`
 });
 
 
-const file = cli.input[0];
-if (!file) {
+const input = cli.input[0];
+if (!input) {
 	cli.showHelp(); // this exits the process.
 }
 
-const xml = minify(fs.readFileSync(file, "utf8"));
+const xml = minify(fs.readFileSync(input, "utf8"));
 
-if (cli.flags.inPlace) {
-	console.log(`Writing to ${file}`);
-	fs.writeFileSync(file, xml, "utf8");
+if (cli.flags.inPlace || cli.flags.output) {
+	const output = cli.flags.inPlace ?
+		input : cli.flags.output;
+	console.log(`Writing to ${output}`);
+	fs.writeFileSync(output, xml, "utf8");
 } else {
 	process.stdout.write(xml);
 }

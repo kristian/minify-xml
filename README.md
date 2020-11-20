@@ -90,7 +90,8 @@ You can run `minify-xml` from the command line to minify XML files:
 
 ```bash
 minify-xml sitemap.xml
-minify-xml --in-place blog.atom
+minify-xml blog.atom --in-place
+minify-xml view.xml --output view.min.xml
 ```
 
 ## Author
