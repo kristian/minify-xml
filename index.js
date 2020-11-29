@@ -14,42 +14,36 @@ function findAllMatches(string, regexp, group) {
 // note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
 // is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
-const emptyRegexp = new RegExp(), tagPattern = /(?<=<\/?[^\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/;
-function findAllMatchesInTags(xml, regexp, lookbehind, group) {
-    if (!(lookbehind instanceof RegExp)) {
-        group = lookbehind; lookbehind = emptyRegexp;
-    }
-
-    return findAllMatches(xml, new RegExp(tagPattern.source.replace("%1",
-        lookbehind.source) + regexp.source, regExpGlobal), group);
+const emptyRegExp = new RegExp(), tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source,
+    betweenBracketsPattern = tagPattern.replace(/(?<=(?<!\(\?)<)/, "(?:!\\s*(?:--(?:[^-]|-[^-])*--\\s*)|!\\[(?:CDATA|.*?)\\[(?:[^\\]]|][^\\]]|]][^>])*]]|!DOCTYPE\\s+(?:[^>[]|\\[[\\s\\S]*?\\])*|\\?(?:[^?]|\\?[^>])*\\?|").replace("%1", "\\s*[!?/]?)>") + "%1(?=<)",
+    prologPattern = tagPattern.replace(/(?<=(?<!\(\?)<).*(?=\\b)/, "\\?xml")
+function findAllMatchesInTags(xml, regexp, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String(), group: 0 }) {
+    const lookbehindPattern = options.lookbehindPattern || (options.lookbehind || emptyRegExp).source;
+    return findAllMatches(xml, new RegExp((options.tagPattern || tagPattern).replace("%1", lookbehindPattern) + regexp.source, regExpGlobal), options.group);
 }
-function replaceInTags(xml, regexp, lookbehind, replacement) {
-    if (!(lookbehind instanceof RegExp)) {
-        replacement = lookbehind; lookbehind = emptyRegexp;
-    }
-    
-    return xml.replace(new RegExp(tagPattern.source.replace("%1",
-        lookbehind.source) + regexp.source, regExpGlobal), replacement);
+// include non-tags means declaration like <! comments / doctype declaration and <? prolog / processing instructions
+function replaceInTags(xml, regexp, replacement, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String() }) {
+    const lookbehindPattern = options.lookbehindPattern || (options.lookbehind || emptyRegExp).source;
+    return xml.replace(new RegExp((options.tagPattern || tagPattern).replace("%1", lookbehindPattern) + regexp.source, regExpGlobal), replacement);
 }
-function replaceBetweenTags(xml, regexp, lookbehind, lookahead, replacement) {
-    if (!(lookbehind instanceof RegExp)) {
-        lookahead = lookbehind; lookbehind = emptyRegexp;
-    }
-    if (!(lookahead instanceof RegExp)) {
-        replacement = lookahead; lookahead = emptyRegexp;
-    }
-
-    return replaceInTags(xml, new RegExp(regexp.source + `(?=${ lookahead.source }<[^!])`),
-        new RegExp("\\s*/?>" + lookbehind.source), replacement);
+function replaceBetweenTags(xml, regexp, replacement, options = { lookbehind: emptyRegExp, lookbehindPattern: String(), lookahead: emptyRegExp, lookaheadPattern: String(), includeNonTags: false }) {
+    const lookbehindPattern = "\\s*/?>" + (options.lookbehindPattern || (options.lookbehind || emptyRegExp).source),
+        lookaheadPattern = options.lookaheadPattern || (options.lookahead || emptyRegExp).source + "<[^?!]";
+    return replaceInTags(xml, new RegExp(regexp.source + `(?=${ lookaheadPattern })`), replacement, { lookbehindPattern });
+}
+function replaceBetweenBrackets(xml, regexp, replacement) {
+    return xml.replace(new RegExp(betweenBracketsPattern.replace("%1", regexp.source), regExpGlobal), replacement);
 }
 
-const defaultOptions = {
+const strict = "strict", defaultOptions = module.exports.defaultOptions = {
     removeComments: true,
-    removeWhitespaceBetweenTags: true,
+    removeWhitespaceBetweenTags: true, // "strict", will not consider prolog / doctype, as tags
     collapseWhitespaceInTags: true,
     collapseEmptyElements: true,
     trimWhitespaceFromTexts: false,
     collapseWhitespaceInTexts: false,
+    collapseWhitespaceInProlog: true,
+    collapseWhitespaceInDocType: true,
     removeUnusedNamespaces: true,
     removeUnusedDefaultNamespace: true,
     shortenNamespaces: true,
@@ -70,6 +64,11 @@ function ignoreCData(replacement) {
             return match; // if so do not replace anything
         }
 
+        // if the replacement is a function, apply our arguments
+        if (typeof replacement === "function") {
+            return replacement.apply(this, arguments);
+        }
+
         // otherwise execute the replacement of the capturing groups manually
         return captures ? replacement.replace(/(?<!\$)\$(\d+|\&)/g, (group, number) =>
             ["0", "&"].includes(number) ? match : captures[parseInt(number - 1)] || String()) : replacement;
@@ -86,23 +85,34 @@ module.exports.minify = function(xml, options) {
     // decide on whether to use the ignoreCData replacement function or not, to improve performance
     const replacer = options.ignoreCData && xml.includes("<![CDATA[") ? ignoreCData : replacement => replacement, emptyReplacer = replacer(String());
 
+    function removeComments(xml) {
+        return xml.replace(/<!\s*(?:--(?:[^-]|-[^-])*--\s*)>/g, emptyReplacer);
+    }
+
     // remove XML comments <!-- ... -->
     if (options.removeComments) {
-        xml = xml.replace(/<!\s*(?:--(?:[^-]|-[^-])*--\s*)>/g, emptyReplacer);
+        xml = removeComments(xml);
     }
 
-    // remove whitespace between tags <anyTag/>   <anyOtherTag/>
+    // remove whitespace only between tags <anyTag/>   <anyOtherTag/>
     if (options.removeWhitespaceBetweenTags) {
-        xml = replaceBetweenTags(xml, /\s+/, emptyReplacer)
+        xml = (options.removeWhitespaceBetweenTags === strict ? replaceBetweenTags :
+        // special case: also consider the prolog <?xml ... ?>, processing instructions <?pi ... ?>, the document type declaration <!DOCTYPE ... >, CDATA sections <![CDATA[ ... ]]> and comments <!-- ... --> as tags here
+            replaceBetweenBrackets)(xml, /\s+/, emptyReplacer);
     }
 
-    // remove / collapse multiple whitespace in tags <anyTag  attributeA  =  "..."  attributeB  =  "..."> ... </anyTag  >
-    if (options.collapseWhitespaceInTags) {
-        xml = replaceInTags(xml, /\s+/, replacer(" ")); // collapse whitespace between attributes
-        xml = replaceInTags(xml, /\s*=\s*/, /\s+[^=\s>]+/, replacer("=")); // remove leading / tailing whitespace around attribute equal signs
-        xml = replaceInTags(xml, /\s*(?=\/?>)/, emptyReplacer); // remove whitespace before closing > /> of tags
+    function collapseWhitespaceInTags(xml, options = { tagPattern }) {
+        xml = replaceInTags(xml, /\s+/, replacer(" "), options); // collapse whitespace between attributes
+        xml = replaceInTags(xml, /\s*=\s*/, replacer("="), { ...options, lookbehind: /\s+[^=\s>]+/ }); // remove leading / tailing whitespace around attribute equal signs
+        xml = replaceInTags(xml, /\s*(?=[/?]?>)/, emptyReplacer, options); // remove whitespace before closing > /> ?> of tags
+        return xml;
     }
-    
+
+    // remove / collapse whitespace in tags <anyTag  attributeA  =  "..."  attributeB  =  "..."> ... </anyTag  >
+    if (options.collapseWhitespaceInTags) {
+        xml = collapseWhitespaceInTags(xml);
+    }
+
     // collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..." ></anyTag >
     if (options.collapseEmptyElements) {
         xml = xml.replace(/<([^\s\/>]+)([^<]*?)(?<!\/)><\/\1\s*>/g, replacer("<$1$2/>"));
@@ -118,21 +128,39 @@ module.exports.minify = function(xml, options) {
 
     // collapse whitespace in texts like <anyTag>foo    bar   baz</anyTag>
     if (options.collapseWhitespaceInTexts) {
-        xml = replaceBetweenTags(xml, /\s+/, /[^<]*/, /[^<]*/, replacer(" "));
+        xml = replaceBetweenTags(xml, /\s+/, replacer(" "), { lookbehind: /[^<]*/, lookahead: /[^<]*/ });
     }
 
+    // remove / collapse whitespace in the xml prolog <?xml version = "1.0" ?>
+    if (options.collapseWhitespaceInProlog) {
+        xml = collapseWhitespaceInTags(xml, { tagPattern: prologPattern });
+    }
+
+    // remove / collapse whitespace in the xml document type declaration <!DOCTYPE   DocType   >
+    if (options.collapseWhitespaceInDocType) {
+        xml = xml.replace(/<!DOCTYPE\s+([^\s>[]+)(?:\s+(SYSTEM|PUBLIC)\s+("[^"]*"|'[^']*')(?:\s+("[^"]*"|'[^']*'))?)?(?:\s*\[([\s\S]*?)\])?\s*>/, replacer(
+            (match, name, type, literal1, literal2, subset) => `<!DOCTYPE ${name}${ [type, literal1, literal2]
+                .map(token => token && " " + token).join(String()) }${ subset ? `[${ (xml => {
+                    // use a simplified minify xml for the internal subset declaration of the document type
+                    xml = removeComments(xml); // remove comments
+                    xml = xml.replace(/\s+/g, " "); // collapse whitespace
+                    xml = xml.replace(/>\s+</g, "><"); // remove any whitespace between declarations (assuming that > cannot appear in the declarations themselves)
+                    return xml.trim();
+                })(subset) }]` : String() }>`));
+    }
+    
     // remove unused namespaces and shorten the remaining ones to a minimum length
     if (options.removeUnusedNamespaces || options.shortenNamespaces) {
         // the search for all xml namespaces in tags could result in some "fake" namespaces if a xmlns:... string is found inside of CDATA
         // tags. this however comes with no major drawback as we the replace only inside of tags and thus it simplifies the search
-        let all = [...new Set(findAllMatchesInTags(xml, /\s+xmlns:([^\s=]+)\s*=/g, 1))];
+        let all = [...new Set(findAllMatchesInTags(xml, /\s+xmlns:([^\s=]+)\s*=/g, { group: 1 }))];
 
         // remove namespace declarations which are not used anywhere in the document (limitation: the approach taken here will not consider the structure of the XML document
         // thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree)
         if (options.removeUnusedNamespaces) {
             let used = [...new Set([
                 ...findAllMatches(xml, /<([^\s\/>:]+):/g, 1), // look for all tags with namespaces (limitation: might also include tags inside of CData, we ignore that for now)
-                ...findAllMatchesInTags(xml, /([^\s=:]+):/, /\s+/, 1) // look for all attributes with namespaces
+                ...findAllMatchesInTags(xml, /([^\s=:]+):/, { lookbehind: /\s+/, group: 1 }) // look for all attributes with namespaces
             ])].filter(ns => ns !== "xmlns"), unused = all.filter(ns => !used.includes(ns));
 
             if (unused.length) {
@@ -185,8 +213,8 @@ module.exports.minify = function(xml, options) {
 
                 // replace all occurrences of the namespace in the document and mark it as "used"
                 xml = xml.replace(new RegExp(`<(/)?${ns}:`, regExpGlobal), replacer(`<$1${newNs}:`)); // tags with namespaces
-                xml = replaceInTags(xml, new RegExp(`${ns}:`), /\s+/, replacer(`${newNs}:`)); // attributes with namespaces
-                xml = replaceInTags(xml, new RegExp(`xmlns:${ns}(?=[\s=])`), /\s+/, replacer(`xmlns:${newNs}`)); // namespace declaration
+                xml = replaceInTags(xml, new RegExp(`${ns}:`), replacer(`${newNs}:`), { lookbehind: /\s+/ }); // attributes with namespaces
+                xml = replaceInTags(xml, new RegExp(`xmlns:${ns}(?=[\s=])`), replacer(`xmlns:${newNs}`), { lookbehind: /\s+/ }); // namespace declaration
 
                 all[idx] = newNs;
             });

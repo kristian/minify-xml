@@ -1,7 +1,4 @@
 <Tag xmlns:u="used_ns"><AnotherTag attributeA="..." attributeB="..."/><u:NamespaceTag u:attribute="...">
         any valid element content is left unaffected (strangely enough = " ... "
         and even > are valid characters in XML, only &lt; must always be encoded)
-    </u:NamespaceTag>
-
-    <![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]>
-</Tag>
+    </u:NamespaceTag><![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]></Tag>

@@ -2,6 +2,8 @@
     "removeComments": false,
     "removeWhitespaceBetweenTags": false,
     "trimWhitespaceFromTexts": false,
+    "collapseWhitespaceInProlog": false,
+    "collapseWhitespaceInDocType": false,
     "collapseWhitespaceInTexts": false,
     "collapseWhitespaceInTags": false,
     "collapseEmptyElements": false,

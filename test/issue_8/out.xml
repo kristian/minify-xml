@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><project name="org.chrisle.netbeans.plugins.adobeextensionbuilder" default="netbeans" basedir="."><description>Builds, tests, and runs the project org.chrisle.netbeans.plugins.adobeextensionbuilder.</description><import file="nbproject/build-impl.xml"/></project>

@@ -50,10 +50,7 @@ This outputs the minified XML:
 <Tag xmlns:u="used_ns"><AnotherTag attributeA="..." attributeB="..."/><u:NamespaceTag u:attribute="...">
         any valid element content is left unaffected (strangely enough = " ... "
         and even > are valid characters in XML, only &lt; must always be encoded)
-    </u:NamespaceTag>
-
-    <![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]>
-</Tag>
+    </u:NamespaceTag><![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]></Tag>
 ```
 
 ## Options
@@ -66,7 +63,7 @@ require("minify-xml").minify(`<tag/>`, { ... });
 
 - `removeComments` (default: `true`): Remove comments like `<!-- ... -->`.
 
-- `removeWhitespaceBetweenTags` (default: `true`): Remove whitespace between tags like `<anyTag />   <anyOtherTag />`.
+- `removeWhitespaceBetweenTags` (default: `true`): Remove whitespace between tags like `<anyTag />   <anyOtherTag />`. Can be limited to tags only by passing the string `"strict"`, otherwise by default other XML constructs as the prolog `<?xml ... ?>`, processing instructions `<?pi ... ?>`, the document type declaration `<!DOCTYPE ... >`, CDATA sections `<![CDATA[ ... ]]>` and comments `<!-- ... -->` will be also considered as tags.
 
 - `collapseWhitespaceInTags` (default: `true`): Collapse whitespace in tags like `<anyTag   attributeA   =   "..."   attributeB    =   "..."   />`.
 
@@ -75,6 +72,10 @@ require("minify-xml").minify(`<tag/>`, { ... });
 - `trimWhitespaceFromTexts` (default: `false`): Remove leading and tailing whitespace in elements containing text only or a mixture of text and other elements like `<anyTag>  Hello  <anyOtherTag/>  World  </anyTag>`.
 
 - `collapseWhitespaceInTexts` (default: `false`): Collapse whitespace in elements containing text or a mixture of text and other elements (useful for (X)HTML) like `<anyTag>Hello  World</anyTag>`.
+
+- `collapseWhitespaceInProlog` (default: `true`): Collapse and remove whitespace in the xml prolog `<?xml version = "1.0" ?>`.
+
+- `collapseWhitespaceInDocType` (default: `true`): Collapse and remove whitespace in the xml document type declaration `<!DOCTYPE   DocType   >`
 
 - `removeUnusedNamespaces` (default: `true`): Remove any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_uri" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
 

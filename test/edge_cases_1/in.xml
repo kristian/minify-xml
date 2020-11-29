@@ -7,6 +7,7 @@
 test <Tag><Tag attr="... > ..."> test <Tag     attr  =   "... > .'   =  '.."    test= "abc" test=""    /> test <Tag attr   =   "... > ..."    attr2="... > ..."   > test <Tag attr="... > ..." attr2="... > ..."/> test
 <Tag> conent <Tag/>  test  <Tag> hel>   lo </Tag>
 <Tag>   >   </Tag>
+<Tag> <!-- -->  >   </Tag>
 <Tag>      </Tagfsdfd>    </Tag>
 <Tag test3:test="hello" ns2:test="hellok">   test   test    </Tag>
 
@@ -18,7 +19,7 @@ test <Tag><Tag attr="... > ..."> test <Tag     attr  =   "... > .'   =  '.."    
 - -->  <Tag>
 </Test   >
 </Tagfsdfd>    </Tag>
-<!- \
+&lt;!- \
 
 - - - 
 

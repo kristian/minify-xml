@@ -3,7 +3,7 @@
 const fs = require("fs");
 
 const meow = require("meow");
-const minify = require("./").minify;
+const { minify, defaultOptions } = require("./");
 
 const cli = meow(`
 	Usage
@@ -18,6 +18,8 @@ const cli = meow(`
 	  --remove-whitespace-between-tags Remove whitespace between tags
 	  --collapse-whitespace-in-tags Collapse whitespace in tags
 	  --collapse-empty-elements Collapse empty elements
+	  --collapse-whitespace-in-prolog Collapse whitespace in the prolog
+	  --collapse-whitespace-in-doctype Collapse whitespace in the document type declaration
 	  --remove-unused-namespaces Remove any unused namespaces from tags
 	  --remove-unused-default-namespace Remove unused default namespace declaration
 	  --shorten-namespaces Shorten namespaces to a minimal length
@@ -65,6 +67,15 @@ const cli = meow(`
 			type: "boolean",
 			default: false
 		},
+		collapseWhitespaceInProlog: {
+			type: "boolean",
+			default: true
+		},
+		collapseWhitespaceInDocType: {
+			type: "boolean",
+			default: true,
+			alias: "collapse-whitespace-in-doctype"
+		},
 		removeUnusedNamespaces: {
 			type: "boolean",
 			default: true
@@ -91,7 +102,7 @@ if (!input) {
 	cli.showHelp(); // this exits the process.
 }
 
-const xml = minify(fs.readFileSync(input, "utf8"), ["removeComments", "removeWhitespaceBetweenTags", "collapseWhitespaceInTags", "collapseEmptyElements", "trimWhitespaceFromTexts", "collapseWhitespaceInTexts", "removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"].reduce((options, option) => {
+const xml = minify(fs.readFileSync(input, "utf8"), Object.keys(defaultOptions).reduce((options, option) => {
 	options[option] = cli.flags[option];
 	return options;
 }, {}));

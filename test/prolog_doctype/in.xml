@@ -1,0 +1,43 @@
+<?xml version="1.0"   
+
+
+
+encoding='UTF-8'     standalone   
+
+=    "no"   ?>
+
+<!-- comment -->
+
+
+<!DOCTYPE DocType PUBLIC   "Public Identifier"   'file.dtd' [
+
+  <!ELEMENT DocType
+  
+  
+  (#PCDATA)>
+<!-- here is a comment space -->
+
+<!ATTLIST    DocType    attr
+
+
+CDATA #REQUIRED>
+
+  
+]
+
+>
+
+<?trg  ?  ?>
+
+
+<![CDATA[ ]]   >   ]]>
+
+
+
+<DocType attr=''>
+
+	<![CDATA[ ]] >   ]]>
+
+
+    <!-- ... -->
+</DocType>

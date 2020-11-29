@@ -1,6 +1,6 @@
 {
   "name": "minify-xml",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Fast XML minifier / compressor / uglifier with a command-line",
   "keywords": [
     "XML",

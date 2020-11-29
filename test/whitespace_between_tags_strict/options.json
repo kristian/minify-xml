@@ -1,0 +1,5 @@
+{
+    "removeWhitespaceBetweenTags": "strict",
+    "removeComments": false,
+    "collapseEmptyElements": false
+}
