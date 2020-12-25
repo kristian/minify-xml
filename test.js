@@ -37,13 +37,17 @@ const buildArguments = options => Object.entries(options).reduce((args, [option,
         return args;
     }, []);
 test("test cli help", async t => {
-    const help = (await execa(cliPath, [], { reject: false })).stdout;
-    t.regex(help, /\$ minify-xml <input>/);
+    const {exitCode, stdout} = await execa(cliPath, [], { reject: false });
+    t.is(exitCode, 2); t.regex(stdout, /\$ minify-xml <input>/);
 
     // test if the help contains all arguments for all options
     for (const argument of allOptions.map(argumentForOption)) {
-        t.regex(help, new RegExp(argument + "\\b"))
+        t.regex(stdout, new RegExp(argument + "\\b"))
     }
+});
+test("test cli unknown flags", async t => {
+    const {exitCode, stderr} = await execa(cliPath, ["--unknown-flag"], { reject: false });
+    t.not(exitCode, 0); t.regex(stderr, /Unknown flags?\s*--unknown-flag/);
 });
 test("test cli to stdout", async t => {
     t.is(await cli(), minify(xml));

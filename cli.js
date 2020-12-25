@@ -93,7 +93,8 @@ const cli = meow(`
 			default: true,
 			alias: "ignore-cdata"
 		}
-	}
+	},
+	allowUnknownFlags: false
 });
 
 
