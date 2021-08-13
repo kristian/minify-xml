@@ -53,12 +53,23 @@ This outputs the minified XML:
     </u:NamespaceTag><![CDATA[<FakeTag attr = "content in CDATA tags is not minified"></FakeTag>]]></Tag>
 ```
 
+Alternatively a [Node.js `Transform` stream](https://nodejs.org/api/stream.html#stream_class_stream_transform) can be provided to minify XML streams, which is especially helpful for very large files (> 2 GiB, which is the maximum `Buffer` size in Node.js on 64-bit machines):
+
+```js
+const minifyXMLStream = require("minify-xml").minifyStream;
+
+fs.createReadStream("sitemap.xml", "utf8")
+    .pipe(minifyXMLStream())
+    .pipe(process.stdout);
+```
+
 ## Options
 
 You may pass in the following options when calling minify:
 
 ```js
 require("minify-xml").minify(`<tag/>`, { ... });
+require("minify-xml").minifyStream({ ... });
 ```
 
 - `removeComments` (default: `true`): Remove comments like `<!-- ... -->`.
@@ -85,6 +96,18 @@ require("minify-xml").minify(`<tag/>`, { ... });
 
 - `ignoreCData` (default: `true`): Ignore any content inside of CData tags `<![CDATA[ any content ]]>`.
 
+For stream processing following additional options can be supplied:
+
+- `streamMaxMatchLength` (default: `262144`, 256 KiB): The maximum size of matches between chunks. See [`replacestream`](https://www.npmjs.com/package/replacestream#does-that-apply-across-more-than-2-chunks-how-does-it-work-with-regexes) for a detailed explanation.
+
+### Stream Limitations
+
+Note that the default `streamMaxMatchLength` was deliberately chosen as high as a multiple of the Node.js default stream buffer size (the default buffer size for readable streams is 16 KiB, for file system streams it is 64 KiB), as the stream option is specifically meant to be used with very large files / read streams and a larger `streamMaxMatchLength` will result in a more accurate minification, because some very large tags might require to be read into the buffer all at once to be minified.
+
+On 32-bit machines the maximum buffer size in Node.js is 1 GiB and 2 GiB on 64-bit machines (see [this issue](https://bugs.chromium.org/p/v8/issues/detail?id=4153)). Minify XML can handle strings up to that size and using the `minify` function should be preferred over the `minifyStream` option. For larger files / streams the streaming API has to be used, which comes with certain limitations, because no prior knowledge can be obtained for the minification (mainly because we assume we can read the stream only once, an option to obtain the required information by e.g. first parsing a file and then minifying it might be added some time in future). For now the options `removeUnusedNamespaces`, `removeUnusedDefaultNamespace`, `shortenNamespaces` and `ignoreCData` cannot be used with the streaming API and calling the `minifyStream` function with these options enabled, will result in an error. 
+
+Further multiple buffers of the set size, will be created for each minification option enabled (sometimes a minification requires even multiple buffers / replacements). Thus enabling more options will also allocate more memory depending on the `streamMaxMatchLength` option and in case the file / read stream is generally larger than the buffer size set. As the input will be pumped through all minification as a stream, roughly `1.5 * n * buffer size` will get allocated. E.g. the default buffer size of 256 KiB with all default options enabled for streaming, will for instance result in 11 buffers / replacements to be made, so 11 * 256 KiB = 2.75 MiB is to be allocated if the input stream is 256 KiB or larger.
+
 ## CLI
 
 You can run `minify-xml` from the command line to minify XML files:
@@ -93,6 +116,7 @@ You can run `minify-xml` from the command line to minify XML files:
 minify-xml sitemap.xml
 minify-xml blog.atom --in-place
 minify-xml view.xml --output view.min.xml
+minify-xml db.xml --stream > out.xml
 ```
 
 Use any of the options above like:

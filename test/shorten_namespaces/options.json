@@ -1,4 +1,5 @@
 {
+    "shortenNamespaces": true,
     "removeWhitespaceBetweenTags": false,
     "collapseWhitespaceInTags": false
 }

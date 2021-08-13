@@ -3,13 +3,14 @@
 const fs = require("fs");
 
 const meow = require("meow");
-const { minify, defaultOptions } = require("./");
+const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
 
 const cli = meow(`
 	Usage
 	  $ minify-xml <input>
 
 	Options
+	  --stream, -s Stream the input file, instead of reading it
 	  --in-place, -i Save the minified results to the original file
 	  --output, -o Save the minified results to a given output file
 
@@ -28,12 +29,18 @@ const cli = meow(`
 	  --trim-whitespace-from-texts Remove leading and tailing whitespace in text elements
 	  --collapse-whitespace-in-texts Collapse whitespace in text elements
 
+	  --stream-max-match-length The maximum size of matches between chunks, defaults to 256 KiB
+
 	Examples
-	  $ minify-xml sitemap.xml --in-place
+	  $ minify-xml sitemap.xml --stream --in-place
 	  $ minify-xml sitemap.xml --output sitemap.min.xml
 `, {
 	input: ["input"],
 	flags: {
+		stream: {
+			type: "boolean",
+			alias: "s"
+		},
 		output: {
 			type: "string",
 			alias: "o"
@@ -43,57 +50,52 @@ const cli = meow(`
 			alias: "i",
 		},
 
+		streamMaxMatchLength: {
+			type: "number",
+			alias: "streamMaximumMatchLength",
+			default: 256 * 1024 // 256 KiB
+		},
+
 		removeComments: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		removeWhitespaceBetweenTags: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		collapseWhitespaceInTags: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		collapseEmptyElements: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		trimWhitespaceFromTexts: {
-			type: "boolean",
-			default: false
+			type: "boolean"
 		},
 		collapseWhitespaceInTexts: {
-			type: "boolean",
-			default: false
+			type: "boolean"
 		},
 		collapseWhitespaceInProlog: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		collapseWhitespaceInDocType: {
 			type: "boolean",
-			default: true,
 			alias: "collapse-whitespace-in-doctype"
 		},
 		removeUnusedNamespaces: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		removeUnusedDefaultNamespace: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		shortenNamespaces: {
-			type: "boolean",
-			default: true
+			type: "boolean"
 		},
 		ignoreCData: {
 			type: "boolean",
-			default: true,
 			alias: "ignore-cdata"
 		}
 	},
+	booleanDefault: undefined,
 	allowUnknownFlags: false
 });
 
@@ -103,16 +105,27 @@ if (!input) {
 	cli.showHelp(); // this exits the process.
 }
 
-const xml = minify(fs.readFileSync(input, "utf8"), Object.keys(defaultOptions).reduce((options, option) => {
-	options[option] = cli.flags[option];
-	return options;
-}, {}));
+const options = defaultOptions => Object.keys(defaultOptions).reduce((options, option) => {
+	if (cli.flags.hasOwnProperty(option)) {
+		options[option] = cli.flags[option];
+	} return options;
+}, {});
 
+let output;
 if (cli.flags.inPlace || cli.flags.output) {
-	const output = cli.flags.inPlace ?
-		input : cli.flags.output;
-	console.log(`Writing to ${output}`);
-	fs.writeFileSync(output, xml, "utf8");
+	console.log(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
+}
+
+if (cli.flags.stream) {
+	fs.createReadStream(input, "utf8")
+		.pipe(minifyStream(options(defaultStreamOptions)))
+		.pipe(output ? fs.createWriteStream(output, "utf8") : process.stdout);
 } else {
-	process.stdout.write(xml);
+	const xml = minify(fs.readFileSync(input, "utf8"), options(defaultOptions));
+
+	if (output) {
+		fs.writeFileSync(output, xml, "utf8");
+	} else {
+		process.stdout.write(xml);
+	}
 }

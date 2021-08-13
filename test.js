@@ -1,9 +1,13 @@
 const test = require("ava");
 const glob = require("glob");
 
-const fs = require("fs").promises;
 const path = require("path");
+const { promises: fs, createReadStream } = require("fs");
+const exists = path => fs.access(path).then(() => true).catch(() => false);
+
 const execa = require("execa");
+const getStream = require("get-stream");
+const { Readable } = require("stream");
 
 const xmlPath = path.join(__dirname, "test", "usage_example", "in.xml");
 const cliPath = path.join(__dirname, "cli.js"), cli = async (...options) =>
@@ -11,15 +15,25 @@ const cliPath = path.join(__dirname, "cli.js"), cli = async (...options) =>
 const {withFile} = require("tmp-promise");
 const xml = require("fs").readFileSync(xmlPath, "utf8");
 
-const { minify, defaultOptions } = require("./");
+const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
+const minifiedXml = minify(xml), minifiedStreamXml = minify(xml, defaultStreamOptions);
 
 glob.sync("test/*/").forEach(dir => {
     test(dir.substr("test/".length).replace(/[_\/]/g, " ").trim(), async t => {
+        const options =  await (fs.readFile(path.join(dir, "options.json"), "utf8")
+            .then(JSON.parse).catch(() => {}));
+
         // minify in.xml with options.json (or default options) and expect out.xml
-        t.is(minify(await fs.readFile(path.join(dir, "in.xml"), "utf8"),
-            await (fs.readFile(path.join(dir, "options.json"), "utf8")
-                .then(JSON.parse).catch(() => {}))),
+        t.is(minify(await fs.readFile(path.join(dir, "in.xml"), "utf8"), options),
             await fs.readFile(path.join(dir, "out.xml"), "utf8"));
+
+        // minify in.xml with options.json (or default options) as a stream and expect stream.xml
+        if (await exists(path.join(dir, "stream.xml"))) {
+            t.is(await getStream(createReadStream(path.join(dir, "in.xml"), "utf8").pipe(minifyStream(options))),
+                await fs.readFile(path.join(dir, "stream.xml"), "utf8"));
+        } else {
+            t.throws(() => minifyStream(options), { message: /cannot be used with streams/ });
+        }
     });
 });
 
@@ -50,18 +64,26 @@ test("test cli unknown flags", async t => {
     t.not(exitCode, 0); t.regex(stderr, /Unknown flags?\s*--unknown-flag/);
 });
 test("test cli to stdout", async t => {
-    t.is(await cli(), minify(xml));
+    t.is(await cli(), minifiedXml);
+});
+test("test cli stream to stdout", async t => {
+    t.is(await cli("--stream"), minifiedStreamXml);
 });
 test("test cli in-place", t => withFile(async ({path: tmpPath}) => {
     await fs.copyFile(xmlPath, tmpPath);
     await execa(cliPath, [tmpPath, "--in-place"]);
 
-    t.is(await fs.readFile(tmpPath, "utf8"), minify(xml));
+    t.is(await fs.readFile(tmpPath, "utf8"), minifiedXml);
 }));
 test("test cli to output", t => withFile(async ({path: tmpPath}) => {
     await cli("--output", tmpPath);
 
-    t.is(await fs.readFile(tmpPath, "utf8"), minify(xml));
+    t.is(await fs.readFile(tmpPath, "utf8"), minifiedXml);
+}));
+test("test cli stream to output", t => withFile(async ({path: tmpPath}) => {
+    await cli("--stream", "--output", tmpPath);
+
+    t.is(await fs.readFile(tmpPath, "utf8"), minifiedStreamXml);
 }));
 for (const option of allOptions) {
     test("test cli option " + argumentForOption(option), async t => {
@@ -70,3 +92,8 @@ for (const option of allOptions) {
             minify(xml, options));
     });
 }
+
+test("test stream edge case", async t => {
+    t.is(await getStream(Readable.from(["<", "t", ">", "<", "/", "t", ">", "<", "t>", "</t>"])
+        .pipe(minifyStream({ streamMaxMatchLength: 4 }))), "<t></t><t/>");
+});

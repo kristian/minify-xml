@@ -1,6 +1,6 @@
 {
   "name": "minify-xml",
-  "version": "2.5.0",
+  "version": "3.0.0",
   "description": "Fast XML minifier / compressor / uglifier with a command-line",
   "keywords": [
     "XML",
@@ -41,12 +41,15 @@
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "meow": "^8.1.0"
+    "meow": "^9.0.0",
+    "pumpify": "^2.0.1",
+    "replacestream": "^4.0.3"
   },
   "devDependencies": {
-    "ava": "^3.14.0",
-    "execa": "^5.0.0",
-    "glob": "^7.1.6",
+    "ava": "^3.15.0",
+    "execa": "^5.1.1",
+    "get-stream": "^6.0.1",
+    "glob": "^7.1.7",
     "nyc": "^15.1.0",
     "tmp-promise": "^3.0.2"
   }

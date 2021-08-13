@@ -1,14 +1,22 @@
 "use strict"; // we are overriding arguments, so this is important!
 
+function trim(string) {
+    return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, String());
+}
+
 const regExpGlobal = "g";
 function escapeRegExp(string) {
-    return string.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
 function findAllMatches(string, regexp, group) {
-    let match, matches = [];
-    while ((match = regexp.exec(string))) { if (match[group]) {
-        matches.push(typeof group === "number" ? match[group] : match);
-    } } return matches;
+    let matches = [], match;
+    while ((match = regexp.exec(string))) {
+        if (typeof group === "number") {
+            match[group] && matches.push(match[group]);
+        } else {
+            matches.push(match);
+        }
+    } return matches;
 }
 
 // note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
@@ -104,7 +112,7 @@ module.exports.minify = function(xml, options) {
     function collapseWhitespaceInTags(xml, options = { tagPattern }) {
         xml = replaceInTags(xml, /\s+/, replacer(" "), options); // collapse whitespace between attributes
         xml = replaceInTags(xml, /\s*=\s*/, replacer("="), { ...options, lookbehind: /\s+[^=\s>]+/ }); // remove leading / tailing whitespace around attribute equal signs
-        xml = replaceInTags(xml, /\s*(?=[/?]?>)/, emptyReplacer, options); // remove whitespace before closing > /> ?> of tags
+        xml = replaceInTags(xml, /\s+(?=[/?]?>)/, emptyReplacer, options); // remove whitespace before closing > /> ?> of tags
         return xml;
     }
 
@@ -120,7 +128,8 @@ module.exports.minify = function(xml, options) {
 
     // remove / trim whitespace in texts like <anyTag>  foo  </anyTag>
     if (options.trimWhitespaceFromTexts) {
-        xml = replaceBetweenTags(xml, /\s*([\s\S]*?)\s*/, replacer("$1"))
+        // note, to avoid zero-length matches use two replaceBetweenTags here (a zero-length match causes an endless loop in replacestream)
+        xml = replaceBetweenTags(xml, /\s+(?=[\s\S]*?)|(?<=[\s\S]*)\s+/, emptyReplacer);
 
         // special case: treat CDATA sections as text, so also remove whitespace between CDATA end tags and other tags
         xml = xml.replace(/(?<=<!\[CDATA\[[\s\S]*?]]>)\s+/g, String());
@@ -145,7 +154,7 @@ module.exports.minify = function(xml, options) {
                     xml = removeComments(xml); // remove comments
                     xml = xml.replace(/\s+/g, " "); // collapse whitespace
                     xml = xml.replace(/>\s+</g, "><"); // remove any whitespace between declarations (assuming that > cannot appear in the declarations themselves)
-                    return xml.trim();
+                    return xml.trim ? xml.trim() : trim(xml);
                 })(subset) }]` : String() }>`));
     }
     
@@ -221,5 +230,47 @@ module.exports.minify = function(xml, options) {
         }
     }
 
-    return xml.trim();
-}
+    return xml.trim ? xml.trim() : trim(xml);
+};
+
+const pumpify = require("pumpify");
+const replaceStream = require("replacestream"); // note that replacestream does NOT support zero-length regex matches!
+
+const unsupportedStreamOptions = ['removeUnusedNamespaces', 'removeUnusedDefaultNamespace', 'shortenNamespaces', 'ignoreCData'],
+    defaultStreamOptions = module.exports.defaultStreamOptions = {
+        ...defaultOptions,
+        streamMaxMatchLength: 256 * 1024, // 256 KiB, maximum size of matches between chunks
+        // all these options require prior knowledge about the stream, for instance if we are in a CData block, or what namespaces are present
+        ...Object.fromEntries(unsupportedStreamOptions.map(option => [option, false]))
+    };
+
+module.exports.minifyStream = function(options) {
+    // apply the default options
+    options = {
+        ...defaultStreamOptions,
+        ...(options || {})
+    };
+
+    // ignoring CData sections is not supported w/ streams
+    const unsupportedOption = unsupportedStreamOptions.find(option => !!options[option]);
+    if (unsupportedOption) {
+        throw new Error(`The '${unsupportedOption}' option cannot be used with streams, as it requires prior knowledge about the stream to minify`);
+    }
+
+    // the minify function accepts strings only, however as we took care (e.g. by using a polyfill 'trim' function) that the function is only repeatedly
+    // calling the strings 'replace' function on an unmodified input object, we can take advantage of duck typing here and pass an object resembling a
+    // very simple string, that captures all calls to 'replace' and maps them into 'replacestream'. all unsupported options, e.g. those requiring prior
+    // knowledge about the stream like 'removeUnusedNamespaces', must be disabled
+    const streams = [], replaceOptions = { maxMatchLen: options.streamMaxMatchLength }, stringImposter = {
+        replace: function() {
+            streams.push(replaceStream(...arguments, replaceOptions));
+            return stringImposter;
+        }
+    };
+
+    // called with the string-like object, it will create a chain of (replace)streams, which, if we pipe data into the first stream, apply all minifications
+    module.exports.minify(stringImposter, options);
+
+    // minify will always 'trim' the output, if more minification transformations have been applied, pumpify all streams into one
+    return streams.length > 1 ? pumpify(streams) : streams[0];
+};

@@ -1,3 +1,4 @@
 {
+    "removeUnusedNamespaces": true,
     "shortenNamespaces": false
 }
