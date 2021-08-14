@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const { constants: { MAX_STRING_LENGTH } } = require("buffer");
 
 const meow = require("meow");
 const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
@@ -114,6 +115,17 @@ const options = defaultOptions => Object.keys(defaultOptions).reduce((options, o
 let output;
 if (cli.flags.inPlace || cli.flags.output) {
 	console.log(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
+}
+
+if (!cli.flags.stream) {
+	try {
+		if (fs.statSync(input).size > MAX_STRING_LENGTH) {
+			console.log(`Files larger than ${MAX_STRING_LENGTH} bytes require to be streamed, switching to stream mode`);
+			cli.flags.stream = true;
+		}
+	} catch(e) {
+		// nothing to do here
+	}
 }
 
 if (cli.flags.stream) {
