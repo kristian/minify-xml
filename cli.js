@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const path = require("path");
 const { constants: { MAX_STRING_LENGTH } } = require("buffer");
 
 const meow = require("meow");
+const ProgressBar = require("progress");
 const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
 
 const cli = meow(`
@@ -117,20 +119,34 @@ if (cli.flags.inPlace || cli.flags.output) {
 	console.log(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
 }
 
+let size = NaN;
+try {
+	size = fs.statSync(input).size;
+} catch(e) {
+	// nothing to do here
+} 
+
 if (!cli.flags.stream) {
-	try {
-		if (fs.statSync(input).size > MAX_STRING_LENGTH) {
-			console.log(`Files larger than ${MAX_STRING_LENGTH} bytes require to be streamed, switching to stream mode`);
-			cli.flags.stream = true;
-		}
-	} catch(e) {
-		// nothing to do here
+	if (size > MAX_STRING_LENGTH) {
+		// only log to console, if output is set, otherwise the log message ends up in the stdout and might get piped to other applications
+		output && console.log(`Files larger than ${MAX_STRING_LENGTH} bytes require to be streamed, switching to stream mode`);
+		cli.flags.stream = true;
 	}
 }
 
 if (cli.flags.stream) {
-	fs.createReadStream(input, "utf8")
-		.pipe(minifyStream(options(defaultStreamOptions)))
+	const stream = fs.createReadStream(input, "utf8");
+	if (output && size) {
+		const bar = new ProgressBar(`  minify ${ path.basename(input) } [:bar] :percent ETA: :etas`, {
+			incomplete: ' ',
+			width: 20,
+			total: size
+		});
+		stream.on("data", chunk =>
+			bar.tick(chunk.length));
+	}
+
+	stream.pipe(minifyStream(options(defaultStreamOptions)))
 		.pipe(output ? fs.createWriteStream(output, "utf8") : process.stdout);
 } else {
 	const xml = minify(fs.readFileSync(input, "utf8"), options(defaultOptions));
