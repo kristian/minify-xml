@@ -85,6 +85,10 @@ test("test cli stream to output", t => withFile(async ({path: tmpPath}) => {
 
     t.is(await fs.readFile(tmpPath, "utf8"), minifiedStreamXml);
 }));
+test("test cli debug", async t => {
+    t.is(await cli("--debug", "--ignore-cdata", "--remove-comments"),
+        "/<!\\s*(?:--(?:[^-]|-[^-])*--\\s*)>/g");
+});
 for (const option of allOptions) {
     test("test cli option " + argumentForOption(option), async t => {
         const options = buildOptions(option);

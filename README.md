@@ -76,6 +76,8 @@ require("minify-xml").minifyStream({ ... });
 
 - `removeWhitespaceBetweenTags` (default: `true`): Remove whitespace between tags like `<anyTag />   <anyOtherTag />`. Can be limited to tags only by passing the string `"strict"`, otherwise by default other XML constructs as the prolog `<?xml ... ?>`, processing instructions `<?pi ... ?>`, the document type declaration `<!DOCTYPE ... >`, CDATA sections `<![CDATA[ ... ]]>` and comments `<!-- ... -->` will be also considered as tags.
 
+- `considerPreserveWhitespace` (default: `true`): Do consider the `xml:space="preserve"` attribute or `<pre>` tags in any namespace when `removeWhitespaceBetweenTags`. If set to true and `xml:space="preserve"` is specified, whitespace between tags like `<anyTag xml:space="preserve">   </anyTag>` will _not_ be removed.
+
 - `collapseWhitespaceInTags` (default: `true`): Collapse whitespace in tags like `<anyTag   attributeA   =   "..."   attributeB    =   "..."   />`.
 
 - `collapseEmptyElements` (default: `true`): Collapse empty elements like `<anyTag anyAttribute = "..."></anyTag>`.

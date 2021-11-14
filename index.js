@@ -4,7 +4,7 @@ function trim(string) {
     return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, String());
 }
 
-const regExpGlobal = "g";
+const emptyRegExp = new RegExp(), anyPattern = /[\s\S]*/.source, regExpGlobal = "g";
 function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
@@ -22,9 +22,7 @@ function findAllMatches(string, regexp, group) {
 // note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
 // is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
-const emptyRegExp = new RegExp(), tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source,
-    betweenBracketsPattern = tagPattern.replace(/(?<=(?<!\(\?)<)/, "(?:!\\s*(?:--(?:[^-]|-[^-])*--\\s*)|!\\[(?:CDATA|.*?)\\[(?:[^\\]]|][^\\]]|]][^>])*]]|!DOCTYPE\\s+(?:[^>[]|\\[[\\s\\S]*?\\])*|\\?(?:[^?]|\\?[^>])*\\?|").replace("%1", "\\s*[!?/]?)>") + "%1(?=<)",
-    prologPattern = tagPattern.replace(/(?<=(?<!\(\?)<).*(?=\\b)/, "\\?xml")
+const tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source;
 function findAllMatchesInTags(xml, regexp, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String(), group: 0 }) {
     const lookbehindPattern = options.lookbehindPattern || (options.lookbehind || emptyRegExp).source;
     return findAllMatches(xml, new RegExp((options.tagPattern || tagPattern).replace("%1", lookbehindPattern) + regexp.source, regExpGlobal), options.group);
@@ -36,9 +34,10 @@ function replaceInTags(xml, regexp, replacement, options = { tagPattern, lookbeh
 }
 function replaceBetweenTags(xml, regexp, replacement, options = { lookbehind: emptyRegExp, lookbehindPattern: String(), lookahead: emptyRegExp, lookaheadPattern: String(), includeNonTags: false }) {
     const lookbehindPattern = "\\s*/?>" + (options.lookbehindPattern || (options.lookbehind || emptyRegExp).source),
-        lookaheadPattern = options.lookaheadPattern || (options.lookahead || emptyRegExp).source + "<[^?!]";
+        lookaheadPattern = (options.lookaheadPattern || (options.lookahead || emptyRegExp).source) + "<[^?!]";
     return replaceInTags(xml, new RegExp(regexp.source + `(?=${ lookaheadPattern })`), replacement, { lookbehindPattern });
 }
+const betweenBracketsPattern = tagPattern.replace(/(?<=(?<!\(\?)<)/, "(?:!\\s*(?:--(?:[^-]|-[^-])*--\\s*)|!\\[(?:CDATA|.*?)\\[(?:[^\\]]|][^\\]]|]][^>])*]]|!DOCTYPE\\s+(?:[^>[]|\\[[\\s\\S]*?\\])*|\\?(?:[^?]|\\?[^>])*\\?|").replace("%1", "\\s*[!?/]?)>") + "%1(?=<)";
 function replaceBetweenBrackets(xml, regexp, replacement) {
     return xml.replace(new RegExp(betweenBracketsPattern.replace("%1", regexp.source), regExpGlobal), replacement);
 }
@@ -46,6 +45,7 @@ function replaceBetweenBrackets(xml, regexp, replacement) {
 const strict = "strict", defaultOptions = module.exports.defaultOptions = {
     removeComments: true,
     removeWhitespaceBetweenTags: true, // "strict", will not consider prolog / doctype, as tags
+    considerPreserveWhitespace: true,
     collapseWhitespaceInTags: true,
     collapseEmptyElements: true,
     trimWhitespaceFromTexts: false,
@@ -83,6 +83,8 @@ function ignoreCData(replacement) {
     };
 }
 
+const prologPattern = tagPattern.replace(/(?<=(?<!\(\?)<).*(?=\\b)/, "\\?xml"),
+    preservePattern = /(?<!<(?:[^\s\/>:]+:)?pre[^<]*?>|\s+xml:space\s*=\s*(?:"preserve"|'preserve')(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\s*>)/.source;
 module.exports.minify = function(xml, options) {
     // apply the default options
     options = {
@@ -129,7 +131,13 @@ module.exports.minify = function(xml, options) {
     // remove / trim whitespace in texts like <anyTag>  foo  </anyTag>
     if (options.trimWhitespaceFromTexts) {
         // note, to avoid zero-length matches use two replaceBetweenTags here (a zero-length match causes an endless loop in replacestream)
-        xml = replaceBetweenTags(xml, /\s+(?=[\s\S]*?)|(?<=[\s\S]*)\s+/, emptyReplacer);
+        if (!options.considerPreserveWhitespace) {
+            // if we do not need to care about preserving whitespace, we can do it in one replacement
+            xml = replaceBetweenTags(xml, /\s+(?=[\s\S]*?)|(?<=[\s\S]*)\s+/, emptyReplacer);
+        } else {
+            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern, lookaheadPattern: anyPattern });
+            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern + anyPattern });
+        }
 
         // special case: treat CDATA sections as text, so also remove whitespace between CDATA end tags and other tags
         xml = xml.replace(/(?<=<!\[CDATA\[[\s\S]*?]]>)\s+/g, String());
@@ -137,7 +145,7 @@ module.exports.minify = function(xml, options) {
 
     // collapse whitespace in texts like <anyTag>foo    bar   baz</anyTag>
     if (options.collapseWhitespaceInTexts) {
-        xml = replaceBetweenTags(xml, /\s+/, replacer(" "), { lookbehind: /[^<]*/, lookahead: /[^<]*/ });
+        xml = replaceBetweenTags(xml, /\s+/, replacer(" "), { lookbehindPattern: preservePattern + "[^<]*", lookahead: /[^<]*/ });
     }
 
     // remove / collapse whitespace in the xml prolog <?xml version = "1.0" ?>
@@ -273,4 +281,25 @@ module.exports.minifyStream = function(options) {
 
     // minify will always 'trim' the output, if more minification transformations have been applied, pumpify all streams into one
     return streams.length > 1 ? pumpify(streams) : streams[0];
+};
+
+module.exports.debug = function(options) {
+    // on debug, only execute the minifications that are explicitly enabled
+    options = {
+        ...Object.fromEntries(Object.keys(defaultOptions).map(option => [option, false])),
+        ...(options || {})
+    }
+
+    // the minify function accepts strings only, however only 'replace' is being called repeatedly, so we can take advantage of duck typing here
+    const stringImposter = {
+        trim: () => this, // ignore the trim at the end
+        includes: () => true,
+        replace: function(regexp) {
+            console.log(regexp);
+            return stringImposter;
+        }
+    };
+
+    // called with the string-like object, to dump all regular expressions into the console
+    module.exports.minify(stringImposter, options);
 };

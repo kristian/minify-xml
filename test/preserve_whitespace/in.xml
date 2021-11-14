@@ -1,0 +1,21 @@
+<root xmlns:test="test">
+   <tag xml:space="preserve">  test  </tag>
+   <tag   xml:space= "preserve"  >  test  </tag>
+   <tag  test1="test"  test2='test'  xml:space  =  "preserve"  >  test  </tag>
+   <tag  test1="test"  test2='test'  xml:space ="preserve"  test3="test"  >  test  </tag>
+   <tag xml:space="preserve">  test  </tag>
+
+   <pre>  test</pre>
+   <pre test="test">  test</pre>
+   <pre test="test"   >  test</pre>
+   <test:pre test="test"   >  test</test:pre>
+
+   <tag xml:space="default">  test  </tag>
+   <tag   xml:space="default"  >  test  </tag>
+   <tag  test1="test"  test2='default'  xml:space="default"  >  test  </tag>
+   <tag  test1="test"  test2='default'  xml:space="default"   test3="test" >  test  </tag>
+   <tag xml:space="default">  test  </tag>
+
+   <tag xml:space="preserve"></tag><pre></pre><pre/><tag>  test  </tag>
+   <tag  test1="test"  test2='test'  xml:space="preserve"  />  test  </tag>
+</root>

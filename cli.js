@@ -6,7 +6,7 @@ const { constants: { MAX_STRING_LENGTH } } = require("buffer");
 
 const meow = require("meow");
 const ProgressBar = require("progress");
-const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
+const { minify, defaultOptions, minifyStream, defaultStreamOptions, debug } = require("./");
 
 const cli = meow(`
 	Usage
@@ -20,6 +20,7 @@ const cli = meow(`
 	Use prefix --no-, false or =false to disable
 	  --remove-comments Remove comments
 	  --remove-whitespace-between-tags Remove whitespace between tags
+	  --consider-preserve-whitespace Consider preserving whitespace
 	  --collapse-whitespace-in-tags Collapse whitespace in tags
 	  --collapse-empty-elements Collapse empty elements
 	  --collapse-whitespace-in-prolog Collapse whitespace in the prolog
@@ -65,6 +66,9 @@ const cli = meow(`
 		removeWhitespaceBetweenTags: {
 			type: "boolean"
 		},
+		considerPreserveWhitespace: {
+			type: "boolean"
+		},
 		collapseWhitespaceInTags: {
 			type: "boolean"
 		},
@@ -96,6 +100,10 @@ const cli = meow(`
 		ignoreCData: {
 			type: "boolean",
 			alias: "ignore-cdata"
+		},
+
+		debug: {
+			type: "boolean"
 		}
 	},
 	booleanDefault: undefined,
@@ -104,7 +112,7 @@ const cli = meow(`
 
 
 const input = cli.input[0];
-if (!input) {
+if (!input && !cli.flags.debug) {
 	cli.showHelp(); // this exits the process.
 }
 
@@ -134,7 +142,9 @@ if (!cli.flags.stream) {
 	}
 }
 
-if (cli.flags.stream) {
+if (cli.flags.debug) {
+	debug(options(defaultOptions));
+} else if (cli.flags.stream) {
 	const stream = fs.createReadStream(input, "utf8");
 	if (output && size) {
 		const bar = new ProgressBar(`  minify ${ path.basename(input) } [:bar] :percent ETA: :etas`, {
