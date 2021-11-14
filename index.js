@@ -4,7 +4,7 @@ function trim(string) {
     return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, String());
 }
 
-const emptyRegExp = new RegExp(), anyPattern = /[\s\S]*/.source, regExpGlobal = "g";
+const emptyRegExp = new RegExp(), emptyPattern = emptyRegExp.source, regExpGlobal = "g";
 function escapeRegExp(string) {
     return string.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
 }
@@ -22,7 +22,7 @@ function findAllMatches(string, regexp, group) {
 // note: this funky looking positive lookbehind regular expression is necessary to match contents inside of tags <...>. this 
 // is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
-const tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source;
+const tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source, noTagPattern = /[^<]*/.source;
 function findAllMatchesInTags(xml, regexp, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String(), group: 0 }) {
     const lookbehindPattern = options.lookbehindPattern || (options.lookbehind || emptyRegExp).source;
     return findAllMatches(xml, new RegExp((options.tagPattern || tagPattern).replace("%1", lookbehindPattern) + regexp.source, regExpGlobal), options.group);
@@ -135,8 +135,8 @@ module.exports.minify = function(xml, options) {
             // if we do not need to care about preserving whitespace, we can do it in one replacement
             xml = replaceBetweenTags(xml, /\s+(?=[\s\S]*?)|(?<=[\s\S]*)\s+/, emptyReplacer);
         } else {
-            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern, lookaheadPattern: anyPattern });
-            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern + anyPattern });
+            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern, lookaheadPattern: noTagPattern });
+            xml = replaceBetweenTags(xml, /\s+/, emptyReplacer, { lookbehindPattern: preservePattern + noTagPattern });
         }
 
         // special case: treat CDATA sections as text, so also remove whitespace between CDATA end tags and other tags
@@ -145,7 +145,8 @@ module.exports.minify = function(xml, options) {
 
     // collapse whitespace in texts like <anyTag>foo    bar   baz</anyTag>
     if (options.collapseWhitespaceInTexts) {
-        xml = replaceBetweenTags(xml, /\s+/, replacer(" "), { lookbehindPattern: preservePattern + "[^<]*", lookahead: /[^<]*/ });
+        xml = replaceBetweenTags(xml, /\s+/, replacer(" "), { lookbehindPattern: (options.considerPreserveWhitespace ?
+            preservePattern : emptyPattern ) + noTagPattern, lookaheadPattern: noTagPattern });
     }
 
     // remove / collapse whitespace in the xml prolog <?xml version = "1.0" ?>
