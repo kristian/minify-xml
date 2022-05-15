@@ -5,8 +5,9 @@ const path = require("path");
 const { constants: { MAX_STRING_LENGTH } } = require("buffer");
 
 const meow = require("meow");
+const camelCase = require("camelcase");
 const ProgressBar = require("progress");
-const { minify, defaultOptions, minifyStream, defaultStreamOptions, debug } = require("./");
+const { minify, defaultOptions, minifyStream, defaultStreamOptions, debug: debugMinify } = require("./");
 
 const cli = meow(`
 	Usage
@@ -64,7 +65,7 @@ const cli = meow(`
 			type: "boolean"
 		},
 		removeWhitespaceBetweenTags: {
-			type: "boolean"
+			type: "string" // allows 'strict'
 		},
 		considerPreserveWhitespace: {
 			type: "boolean"
@@ -76,10 +77,10 @@ const cli = meow(`
 			type: "boolean"
 		},
 		trimWhitespaceFromTexts: {
-			type: "boolean"
+			type: "string" // allows 'strict'
 		},
 		collapseWhitespaceInTexts: {
-			type: "boolean"
+			type: "string" // allows 'strict'
 		},
 		collapseWhitespaceInProlog: {
 			type: "boolean"
@@ -103,22 +104,22 @@ const cli = meow(`
 		},
 
 		debug: {
-			type: "boolean"
+			type: "string",
+			isMultiple: true
 		}
 	},
 	booleanDefault: undefined,
 	allowUnknownFlags: false
 });
 
-
-const input = cli.input[0];
-if (!input && !cli.flags.debug) {
-	cli.showHelp(); // this exits the process.
+const input = cli.input[0], debug = cli.flags.debug.length && !cli.flags.debug.includes("false");
+if (!input && !debug) {
+	cli.showHelp(); // this exit's the process
 }
 
-const options = defaultOptions => Object.keys(defaultOptions).reduce((options, option) => {
-	if (cli.flags.hasOwnProperty(option)) {
-		options[option] = cli.flags[option];
+const options = options => (Array.isArray(options) ? options : Object.keys(options)).reduce((options, option) => {
+	if (cli.flags.hasOwnProperty(option) && cli.flags[option] !== undefined) {
+		options[option] = String(cli.flags[option]) !== "false" ? (cli.flags[option] || true) : false;
 	} return options;
 }, {});
 
@@ -142,13 +143,18 @@ if (!cli.flags.stream) {
 	}
 }
 
-if (cli.flags.debug) {
-	debug(options(defaultOptions));
+if (debug) {
+	// if the debug flag is a string and doesn't contain --debug=true, only debug the single option(s) specified	
+	debugMinify(input && fs.readFileSync(input, "utf8"), !cli.flags.debug.includes("true") ? {
+		...Object.fromEntries(Object.keys(defaultOptions).map(option => [option, false])), // set all to false
+		...Object.fromEntries(cli.flags.debug.map(camelCase).map(option => [option, true])), // set options specified to true
+		...options(defaultOptions) // override any other given options, e.g. --debug=remove-whitespace-between-tags --remove-whitespace-between-tags=strict
+    } : options(defaultOptions));
 } else if (cli.flags.stream) {
 	const stream = fs.createReadStream(input, "utf8");
 	if (output && size) {
 		const bar = new ProgressBar(`  minify ${ path.basename(input) } [:bar] :percent ETA: :etas`, {
-			incomplete: ' ',
+			incomplete: " ",
 			width: 20,
 			total: size
 		});

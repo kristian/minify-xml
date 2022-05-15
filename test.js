@@ -8,6 +8,7 @@ const exists = path => fs.access(path).then(() => true).catch(() => false);
 const execa = require("execa");
 const getStream = require("get-stream");
 const { Readable } = require("stream");
+const decamelize = require("decamelize");
 
 const xmlPath = path.join(__dirname, "test", "usage_example", "in.xml");
 const cliPath = path.join(__dirname, "cli.js"), cli = async (...options) =>
@@ -19,7 +20,7 @@ const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("
 const minifiedXml = minify(xml), minifiedStreamXml = minify(xml, defaultStreamOptions);
 
 glob.sync("test/*/").forEach(dir => {
-    test(dir.substr("test/".length).replace(/[_\/]/g, " ").trim(), async t => {
+    test(dir.substring("test/".length).replace(/[_\/]/g, " ").trim(), async t => {
         const options =  await (fs.readFile(path.join(dir, "options.json"), "utf8")
             .then(JSON.parse).catch(() => {}));
 
@@ -45,9 +46,10 @@ const buildOptions = flag => allOptions.reduce((options, option) => {
         options[option] = option === flag;
         return options;
     }, {});
-const argumentForOption = option => "--" + option.replace(/[A-Z]/g, "-$&").toLowerCase().replace("c-data", "cdata").replace("doc-type", "doctype");
+const argumentForOption = (option, value) => `--${ value === false ? 'no-' : String() }${ decamelize(option, { separator: "-" }).replace("c-data", "cdata").replace("doc-type", "doctype") }`;
 const buildArguments = options => Object.entries(options).reduce((args, [option, value]) => {
-        args.push(argumentForOption(option), String(value));
+        args.push(argumentForOption(option, value));
+        typeof value === "string" && args.push(value);
         return args;
     }, []);
 test("test cli help", async t => {
@@ -55,7 +57,7 @@ test("test cli help", async t => {
     t.is(exitCode, 2); t.regex(stdout, /\$ minify-xml <input>/);
 
     // test if the help contains all arguments for all options
-    for (const argument of allOptions.map(argumentForOption)) {
+    for (const argument of allOptions.map(option => argumentForOption(option))) {
         t.regex(stdout, new RegExp(argument + "\\b"))
     }
 });
@@ -86,8 +88,8 @@ test("test cli stream to output", t => withFile(async ({path: tmpPath}) => {
     t.is(await fs.readFile(tmpPath, "utf8"), minifiedStreamXml);
 }));
 test("test cli debug", async t => {
-    t.is(await cli("--debug", "--ignore-cdata", "--remove-comments"),
-        "/<!\\s*(?:--(?:[^-]|-[^-])*--\\s*)>/g");
+    t.true((await cli("--debug=ignore-cdata", "--debug=remove-comments")).includes(
+        /<!\s*(?:--(?:[^-]|-[^-])*--\s*)>/g.source));
 });
 for (const option of allOptions) {
     test("test cli option " + argumentForOption(option), async t => {
