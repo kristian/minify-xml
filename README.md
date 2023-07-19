@@ -19,7 +19,7 @@ npm install minify-xml -g
 ## Usage
 
 ```js
-const minifyXML = require("minify-xml").minify;
+import minifyXML from "minify-xml";
 
 const xml = `<Tag xmlns:used = "used_ns" xmlns:unused = "unused_ns">
     <!--
@@ -56,7 +56,7 @@ This outputs the minified XML:
 Alternatively a [Node.js `Transform` stream](https://nodejs.org/api/stream.html#stream_class_stream_transform) can be provided to minify XML streams, which is especially helpful for very large files (> 2 GiB, which is the maximum `Buffer` size in Node.js on 64-bit machines):
 
 ```js
-const minifyXMLStream = require("minify-xml").minifyStream;
+import { minifyStream as minifyXMLStream } from "minify-xml";
 
 fs.createReadStream("sitemap.xml", "utf8")
     .pipe(minifyXMLStream())
@@ -68,8 +68,9 @@ fs.createReadStream("sitemap.xml", "utf8")
 You may pass in the following options when calling minify:
 
 ```js
-require("minify-xml").minify(`<tag/>`, { ... });
-require("minify-xml").minifyStream({ ... });
+import { minify as minifyXML, minifyStream as minifyXMLStream } from "minify-xml";
+minifyXML(`<tag/>`, { ... });
+minifyXMLStream({ ... });
 ```
 
 - `removeComments` (default: `true`): Remove comments like `<!-- ... -->`.

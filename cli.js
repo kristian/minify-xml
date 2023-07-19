@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
-const { constants: { MAX_STRING_LENGTH } } = require("buffer");
+import fs from "node:fs";
+import path from "node:path";
+import constants from "buffer";
+const { MAX_STRING_LENGTH } = constants;
 
-const meow = require("meow");
-const camelCase = require("camelcase");
-const ProgressBar = require("progress");
-const { minify, defaultOptions, minifyStream, defaultStreamOptions, debug: debugMinify } = require("./");
+import meow from "meow";
+import { default as camelCase } from "camelcase";
+import ProgressBar from "progress";
+
+import { default as minify, defaultOptions, minifyStream, defaultStreamOptions, debug as debugMinify } from "./index.js";
 
 const cli = meow(`
 	Usage
@@ -44,20 +46,20 @@ const cli = meow(`
 	flags: {
 		stream: {
 			type: "boolean",
-			alias: "s"
+			shortFlag: "s"
 		},
 		output: {
 			type: "string",
-			alias: "o"
+			shortFlag: "o"
 		},
 		inPlace: {
 			type: "boolean",
-			alias: "i",
+			shortFlag: "i",
 		},
 
 		streamMaxMatchLength: {
 			type: "number",
-			alias: "streamMaximumMatchLength",
+			shortFlag: "streamMaximumMatchLength",
 			default: 256 * 1024 // 256 KiB
 		},
 
@@ -87,7 +89,7 @@ const cli = meow(`
 		},
 		collapseWhitespaceInDocType: {
 			type: "boolean",
-			alias: "collapse-whitespace-in-doctype"
+			shortFlag: "collapse-whitespace-in-doctype"
 		},
 		removeUnusedNamespaces: {
 			type: "boolean"
@@ -100,7 +102,7 @@ const cli = meow(`
 		},
 		ignoreCData: {
 			type: "boolean",
-			alias: "ignore-cdata"
+			shortFlag: "ignore-cdata"
 		},
 
 		debug: {
@@ -109,7 +111,8 @@ const cli = meow(`
 		}
 	},
 	booleanDefault: undefined,
-	allowUnknownFlags: false
+	allowUnknownFlags: false,
+	importMeta: import.meta
 });
 
 const input = cli.input[0], debug = cli.flags.debug.length && !cli.flags.debug.includes("false");

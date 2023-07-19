@@ -1,6 +1,5 @@
-"use strict"; // we are overriding arguments, so this is important!
-
-const strict = "strict", defaultOptions = module.exports.defaultOptions = {
+const strict = "strict", strictOption = option => option === strict && { strict: true };
+export const defaultOptions = {
     removeComments: true,
     removeWhitespaceBetweenTags: true, // true / false or 'strict' (will not consider prolog / doctype, as tags)
     considerPreserveWhitespace: true,
@@ -14,7 +13,7 @@ const strict = "strict", defaultOptions = module.exports.defaultOptions = {
     removeUnusedDefaultNamespace: true,
     shortenNamespaces: true,
     ignoreCData: true
-}, strictOption = option => option === strict && { strict: true };
+};
 
 function trim(string) {
     return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, String());
@@ -92,7 +91,7 @@ function ignoreCData(replacement) {
     };
 }
 
-module.exports.minify = function(xml, options) {
+export function minify(xml, options) {
     // apply the default options
     options = {
         ...defaultOptions,
@@ -239,20 +238,20 @@ module.exports.minify = function(xml, options) {
     }
 
     return xml.trim ? xml.trim() : trim(xml);
+}; export default minify;
+
+import pumpify from "pumpify";
+import replaceStream from "replacestream"; // note that replacestream does NOT support zero-length regex matches!
+
+const unsupportedStreamOptions = ["removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"];
+export const defaultStreamOptions = {
+    ...defaultOptions,
+    streamMaxMatchLength: 256 * 1024, // 256 KiB, maximum size of matches between chunks
+    // all these options require prior knowledge about the stream, for instance if we are in a CData block, or what namespaces are present
+    ...Object.fromEntries(unsupportedStreamOptions.map(option => [option, false]))
 };
 
-const pumpify = require("pumpify");
-const replaceStream = require("replacestream"); // note that replacestream does NOT support zero-length regex matches!
-
-const unsupportedStreamOptions = ["removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"],
-    defaultStreamOptions = module.exports.defaultStreamOptions = {
-        ...defaultOptions,
-        streamMaxMatchLength: 256 * 1024, // 256 KiB, maximum size of matches between chunks
-        // all these options require prior knowledge about the stream, for instance if we are in a CData block, or what namespaces are present
-        ...Object.fromEntries(unsupportedStreamOptions.map(option => [option, false]))
-    };
-
-module.exports.minifyStream = function(options) {
+export function minifyStream(options) {
     // apply the default options
     options = {
         ...defaultStreamOptions,
@@ -277,13 +276,13 @@ module.exports.minifyStream = function(options) {
     };
 
     // called with the string-like object, it will create a chain of (replace)streams, which, if we pipe data into the first stream, apply all minifications
-    module.exports.minify(stringImposter, options);
+    minify(stringImposter, options);
 
     // minify will always 'trim' the output, if more minification transformations have been applied, pumpify all streams into one
     return streams.length > 1 ? pumpify(streams) : streams[0];
 };
 
-module.exports.debug = function(xml, options) {
+export function debug(xml, options) {
     xml && console.log(`\x1b[90m${xml}\x1b[0m`);
 
     // the minify function accepts strings only, however only 'replace' is being called repeatedly, so we can take advantage of duck typing here
@@ -297,5 +296,5 @@ module.exports.debug = function(xml, options) {
     };
 
     // called with the string-like object, to dump all regular expressions into the console
-    module.exports.minify(stringImposter, options);
+    minify(stringImposter, options);
 };

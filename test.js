@@ -1,22 +1,24 @@
-const test = require("ava");
-const glob = require("glob");
+import test from "ava";
+import { glob } from "glob";
 
-const path = require("path");
-const { promises: fs, createReadStream } = require("fs");
+import path from "node:path";
+import { readFileSync, promises as fs, createReadStream } from "node:fs";
 const exists = path => fs.access(path).then(() => true).catch(() => false);
 
-const execa = require("execa");
-const getStream = require("get-stream");
-const { Readable } = require("stream");
-const decamelize = require("decamelize");
+import { execa } from "execa";
+import getStream from "get-stream";
+import { Readable } from "node:stream";
+import decamelize from "decamelize";
 
-const xmlPath = path.join(__dirname, "test", "usage_example", "in.xml");
-const cliPath = path.join(__dirname, "cli.js"), cli = async (...options) =>
+import { fileURLToPath } from "node:url";
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const xmlPath = path.join(dirname, "test", "usage_example", "in.xml");
+const cliPath = path.join(dirname, "cli.js"), cli = async (...options) =>
     (await execa("node", [cliPath, xmlPath, ...options])).stdout;
-const {withFile} = require("tmp-promise");
-const xml = require("fs").readFileSync(xmlPath, "utf8");
+import { withFile } from "tmp-promise";
+const xml = readFileSync(xmlPath, "utf8");
 
-const { minify, defaultOptions, minifyStream, defaultStreamOptions } = require("./");
+import { default as minify, defaultOptions, minifyStream, defaultStreamOptions } from "./index.js";
 const minifiedXml = minify(xml), minifiedStreamXml = minify(xml, defaultStreamOptions);
 
 glob.sync("test/*/").forEach(dir => {

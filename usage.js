@@ -1,4 +1,4 @@
-const minifyXML = require("./").minify;
+import minifyXML from "./index.js"
 
 const xml = `<Tag xmlns:used = "used_ns" xmlns:unused = "unused_ns">
     <!--

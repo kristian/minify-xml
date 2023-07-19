@@ -1,6 +1,6 @@
 {
   "name": "minify-xml",
-  "version": "3.5.0",
+  "version": "4.0.0",
   "description": "Fast XML minifier / compressor / uglifier with a command-line",
   "keywords": [
     "XML",
@@ -13,16 +13,17 @@
     "fast",
     "cli"
   ],
+  "type": "module",
   "main": "index.js",
   "bin": "cli.js",
   "scripts": {
-    "test": "nyc ava"
+    "test": "c8 ava"
   },
   "files": [
     "cli.js"
   ],
   "engines": {
-    "node": ">=12"
+    "node": ">=18"
   },
   "author": {
     "name": "Kristian Kraljic",
@@ -41,19 +42,19 @@
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "camelcase": "^6.3.0",
-    "meow": "^9.0.0",
+    "camelcase": "^7.0.1",
+    "meow": "^12.0.1",
     "progress": "^2.0.3",
     "pumpify": "^2.0.1",
     "replacestream": "^4.0.3"
   },
   "devDependencies": {
-    "ava": "^3.15.0",
-    "decamelize": "^5.0.1",
-    "execa": "^5.1.1",
-    "get-stream": "^6.0.1",
-    "glob": "^7.1.7",
-    "nyc": "^15.1.0",
-    "tmp-promise": "^3.0.2"
+    "ava": "^5.3.1",
+    "c8": "^8.0.0",
+    "decamelize": "^6.0.0",
+    "execa": "^7.1.1",
+    "get-stream": "^7.0.1",
+    "glob": "^10.3.3",
+    "tmp-promise": "^3.0.3"
   }
 }
