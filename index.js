@@ -39,7 +39,7 @@ function findAllMatches(string, regexp, group) {
 // is due to that literally any characters except <&" are allowed to be put next to everywhere in XML. as even > is an allowed
 // character, simply checking for (?<=<[^>]*) would not do the trick if e.g. > is used inside of a tag attribute.
 const tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source, noTagPattern = /[^<]*/.source,
-  bracketPattern = tagPattern.replace(/(?<!\(\?)</, "<(?:" + /!\s*(?:--(?:[^-]|-[^-])*--\s*)|!\[(?:CDATA|.*?)\[(?:[^\]]|][^\]]|]][^>])*]]|!DOCTYPE\s+(?:[^>[]|\[[^\]]*\])*|\?(?:[^?]|\?[^>])*\?|/.source).replace("%1", ")%1"),
+  bracketPattern = tagPattern.replace(/(?<!\(\?)</, "<(?:" + /!\s*(?:--(?:[^-]|-[^-])*--\s*)|!\[(?:CDATA|.*?)\[(?:[^\]]|][^\]]|]][^>])*]]|!DOCTYPE\s+(?:[^>[]|\[[^\]]*\])*|\?[^>]*|/.source).replace("%1", ")%1"),
    prologPattern = tagPattern.replace(/(?<=(?<!\(\?)<).*(?=\\b)/, "\\?xml"),
  preservePattern = /(?<!<(?:[^\s\/>:]+:)?pre[^<]*?>|\s+xml:space\s*=\s*(?:"preserve"|'preserve')(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\s*>)/.source;
 function findAllMatchesInTags(xml, regexp, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String(), group: 0 }) {
