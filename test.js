@@ -12,7 +12,7 @@ const decamelize = require("decamelize");
 
 const xmlPath = path.join(__dirname, "test", "usage_example", "in.xml");
 const cliPath = path.join(__dirname, "cli.js"), cli = async (...options) =>
-    (await execa(cliPath, [xmlPath, ...options])).stdout;
+    (await execa("node", [cliPath, xmlPath, ...options])).stdout;
 const {withFile} = require("tmp-promise");
 const xml = require("fs").readFileSync(xmlPath, "utf8");
 
@@ -53,7 +53,7 @@ const buildArguments = options => Object.entries(options).reduce((args, [option,
         return args;
     }, []);
 test("test cli help", async t => {
-    const {exitCode, stdout} = await execa(cliPath, [], { reject: false });
+    const {exitCode, stdout} = await execa("node", [cliPath], { reject: false });
     t.is(exitCode, 2); t.regex(stdout, /\$ minify-xml <input>/);
 
     // test if the help contains all arguments for all options
@@ -62,7 +62,7 @@ test("test cli help", async t => {
     }
 });
 test("test cli unknown flags", async t => {
-    const {exitCode, stderr} = await execa(cliPath, ["--unknown-flag"], { reject: false });
+    const {exitCode, stderr} = await execa("node", [cliPath, "--unknown-flag"], { reject: false });
     t.not(exitCode, 0); t.regex(stderr, /Unknown flags?\s*--unknown-flag/);
 });
 test("test cli to stdout", async t => {
@@ -73,7 +73,7 @@ test("test cli stream to stdout", async t => {
 });
 test("test cli in-place", t => withFile(async ({path: tmpPath}) => {
     await fs.copyFile(xmlPath, tmpPath);
-    await execa(cliPath, [tmpPath, "--in-place"]);
+    await execa("node", [cliPath, tmpPath, "--in-place"]);
 
     t.is(await fs.readFile(tmpPath, "utf8"), minifiedXml);
 }));
