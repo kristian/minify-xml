@@ -23,7 +23,7 @@
     "cli.js"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=12"
   },
   "author": {
     "name": "Kristian Kraljic",
