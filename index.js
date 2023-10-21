@@ -16,7 +16,7 @@ export const defaultOptions = {
 };
 
 function trim(string) {
-    return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, String());
+    return string.replace(/^[\s\uFEFF\xA0]+/g, String()).replace(/[\s\uFEFF\xA0]+$/g, String());
 }
 
 const emptyRegExp = new RegExp(), emptyPattern = emptyRegExp.source, regExpGlobal = "g";
@@ -242,6 +242,7 @@ export function minify(xml, options) {
 
 import pumpify from "pumpify";
 import replaceStream from "replacestream"; // note that replacestream does NOT support zero-length regex matches!
+import { PassThrough } from "node:stream";
 
 const unsupportedStreamOptions = ["removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"];
 export const defaultStreamOptions = {
@@ -279,7 +280,13 @@ export function minifyStream(options) {
     minify(stringImposter, options);
 
     // minify will always 'trim' the output, if more minification transformations have been applied, pumpify all streams into one
-    return streams.length > 1 ? pumpify(streams) : streams[0];
+    if (streams.length > 1) {
+        return pumpify(streams);
+    } else if (streams.length) {
+        return streams[0].pipe(new PassThrough()) // bug: replacestream returns an old transform stream that is not async. iterable, we fix that by piping it through a PassThrough stream ourselves
+    } else {
+        return new PassThrough();
+    }
 };
 
 export function debug(xml, options) {
