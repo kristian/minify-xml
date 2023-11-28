@@ -9,6 +9,7 @@ export const defaultOptions = {
     collapseWhitespaceInTexts: false, // true / false or 'strict'
     collapseWhitespaceInProlog: true,
     collapseWhitespaceInDocType: true,
+    removeUnnecessaryStandaloneDeclaration: true,
     removeUnusedNamespaces: true,
     removeUnusedDefaultNamespace: true,
     shortenNamespaces: true,
@@ -40,7 +41,8 @@ function findAllMatches(string, regexp, group) {
 const tagPattern = /(?<=<\/?[^?!\s\/>]+\b(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*%1)/.source, noTagPattern = /[^<]*/.source,
   bracketPattern = tagPattern.replace(/(?<!\(\?)</, "<(?:" + /!\s*(?:--(?:[^-]|-[^-])*--\s*)|!\[(?:CDATA|.*?)\[(?:[^\]]|][^\]]|]][^>])*]]|!DOCTYPE\s+(?:[^>[]|\[[^\]]*\])*|\?[^>]*|/.source).replace("%1", ")%1"),
    prologPattern = tagPattern.replace(/(?<=(?<!\(\?)<).*(?=\\b)/, "\\?xml"),
- preservePattern = /(?<!<(?:[^\s\/>:]+:)?pre[^<]*?>|\s+xml:space\s*=\s*(?:"preserve"|'preserve')(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\s*>)/.source;
+  docTypePattern = /<!DOCTYPE\s+([^\s>[]+)(?:\s+(SYSTEM|PUBLIC)\s+("[^"]*"|'[^']*')(?:\s+("[^"]*"|'[^']*'))?)?(?:\s*\[([^\]]*)\])?\s*>/.source,
+ preservePattern = /(?<!<(?:[^\s\/>:]+:)?pre[^<]*?>|\s+xml:space\s*=\s*(?:"preserve"|'preserve'|preserve)(?:\s+[^=\s>]+\s*=\s*(?:"[^"]*"|'[^']*'))*\s*>)/.source;
 function findAllMatchesInTags(xml, regexp, options = { tagPattern, lookbehind: emptyRegExp, lookbehindPattern: String(), group: 0 }) {
     const lookbehindPattern = options.lookbehindPattern || (options.lookbehind || emptyRegExp).source;
     return findAllMatches(xml, new RegExp((options.tagPattern || tagPattern).replace("%1", lookbehindPattern) + regexp.source, regExpGlobal), options.group);
@@ -147,6 +149,17 @@ export function minify(xml, options) {
             preservePattern : emptyPattern ) + noTagPattern, lookaheadPattern: noTagPattern, ...strictOption(options.collapseWhitespaceInTexts) });
     }
 
+    // remove remove unnecessary standalone declaration in prolog <?xml standalone = "yes" ?>
+    // the standalone declaration has "no meaning" according to the W3C definition, in case neither the external subset of the DocType declaration
+    // contains any markup declarations (<!ELEMENT, <!ATTLIST, <!ENTITY, <!NOTATION) or a parameter entity (<!ENTITY %) is defined in the any subset
+    // (because we do not read the external subset definition file e.g. schema.dtd, we assume as soon as either a SYSTEM/PUBLIC subset is defined, the standalone attribute must stay)
+    if (options.removeUnnecessaryStandaloneDeclaration) {
+        const docType = xml.match(new RegExp(docTypePattern));
+        if (!docType || (!docType[2] && !(docType[5] && /<!ENTITY\s+%/.test(docType[5])))) {
+            xml = replaceInTags(xml, /\s+standalone\s*=\s*(?:"yes"|'yes'|yes|"no"|'no'|no)/, emptyReplacer, { tagPattern: prologPattern });
+        }
+    }
+
     // remove / collapse whitespace in the xml prolog <?xml version = "1.0" ?>
     if (options.collapseWhitespaceInProlog) {
         xml = collapseWhitespaceInTags(xml, { tagPattern: prologPattern });
@@ -154,7 +167,7 @@ export function minify(xml, options) {
 
     // remove / collapse whitespace in the xml document type declaration <!DOCTYPE   DocType   >
     if (options.collapseWhitespaceInDocType) {
-        xml = xml.replace(/<!DOCTYPE\s+([^\s>[]+)(?:\s+(SYSTEM|PUBLIC)\s+("[^"]*"|'[^']*')(?:\s+("[^"]*"|'[^']*'))?)?(?:\s*\[([^\]]*)\])?\s*>/, replacer(
+        xml = xml.replace(new RegExp(docTypePattern), replacer(
             (match, name, type, literal1, literal2, subset) => `<!DOCTYPE ${name}${ [type, literal1, literal2]
                 .map(token => token && " " + token).join(String()) }${ subset ? `[${ (xml => {
                     // use a simplified minify xml for the internal subset declaration of the document type
@@ -244,7 +257,9 @@ import pumpify from "pumpify";
 import replaceStream from "replacestream"; // note that replacestream does NOT support zero-length regex matches!
 import { PassThrough } from "node:stream";
 
-const unsupportedStreamOptions = ["removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"];
+// some options require prior knowledge, like 'removeUnnecessaryStandaloneDeclaration' will have to read the DocType first and
+// 'removeUnusedNamespaces' needs to scan the document for namespaces in use, thus some options cannot be used when streaming
+const unsupportedStreamOptions = ["removeUnnecessaryStandaloneDeclaration", "removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"];
 export const defaultStreamOptions = {
     ...defaultOptions,
     streamMaxMatchLength: 256 * 1024, // 256 KiB, maximum size of matches between chunks

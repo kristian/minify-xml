@@ -60,7 +60,7 @@ test("test cli help", async t => {
 
     // test if the help contains all arguments for all options
     for (const argument of allOptions.map(option => argumentForOption(option))) {
-        t.regex(stdout, new RegExp(argument + "\\b"))
+        t.regex(stdout, new RegExp(argument + "\\b"));
     }
 });
 test("test cli unknown flags", async t => {
@@ -104,4 +104,16 @@ for (const option of allOptions) {
 test("test stream edge case", async t => {
     t.is(await getStream(Readable.from(["<", "t", ">", "<", "/", "t", ">", "<", "t>", "</t>"])
         .pipe(minifyStream({ streamMaxMatchLength: 4 }))), "<t></t><t/>");
+});
+
+/*
+ * README.md Tests
+ */
+test("test README.md lists all options", async t => {
+    const readme = await fs.readFile(path.join(dirname, "README.md"), "utf8");
+
+    // test if the readme contains all options
+    for (const option of allOptions) {
+        t.regex(readme, new RegExp("`" + option + "`"));
+    }
 });

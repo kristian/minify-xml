@@ -4,6 +4,7 @@
 
 - Add NodeJS 20.x to the test matrix
 - Add (this) changelog
+- Add to remove unnecessary standalone declaration from prolog
 
 ## 4.1.0
 

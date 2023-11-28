@@ -91,6 +91,8 @@ minifyXMLStream({ ... });
 
 - `collapseWhitespaceInDocType` (default: `true`): Collapse and remove whitespace in the xml document type declaration `<!DOCTYPE   DocType   >`
 
+- `removeUnnecessaryStandaloneDeclaration` (default: `true`): Remove an unnecessary standalone declaration in the xml prolog `<?xml version = "1.0" standalone = 'yes' ?>`. Note that according to the W3C standalone has "no meaning" and thus is removed, in case there are no external markup declarations. 
+
 - `removeUnusedNamespaces` (default: `true`): Remove any namespaces from tags, which are not used anywhere in the document, like `<tag xmlns:unused="any_uri" />`. Notice the word *anywhere* here, the minifier not does consider the structure of the XML document, thus namespaces which might be only used in a certain sub-tree of elements might not be removed, even though they are not used in that sub-tree.
 
 - `removeUnusedDefaultNamespace`(default: `true`): Remove default namespace declaration like `<tag xmlns="any_uri"/>` in case there is no tag without a namespace in the whole document.

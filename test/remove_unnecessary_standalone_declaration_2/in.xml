@@ -1,0 +1,6 @@
+<?xml version="1.0" standalone="yes"  ?>
+<!DOCTYPE greeting [
+  <!ELEMENT greeting (#PCDATA)>
+  <!ENTITY test (#PCDATA)>
+]>
+<Tag></Tag>
