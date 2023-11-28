@@ -23,16 +23,19 @@ const minifiedXml = minify(xml), minifiedStreamXml = minify(xml, defaultStreamOp
 
 glob.sync("test/*/").forEach(dir => {
     test(dir.substring("test/".length).replace(/[_\/]/g, " ").trim(), async t => {
-        const options =  await (fs.readFile(path.join(dir, "options.json"), "utf8")
+        const options = await (fs.readFile(path.join(dir, "options.json"), "utf8")
             .then(JSON.parse).catch(() => {}));
 
         // minify in.xml with options.json (or default options) and expect out.xml
         t.is(minify(await fs.readFile(path.join(dir, "in.xml"), "utf8"), options),
             await fs.readFile(path.join(dir, "out.xml"), "utf8"));
 
-        // minify in.xml with options.json (or default options) as a stream and expect stream.xml
+        const streamOptions = await (fs.readFile(path.join(dir, "streamOptions.json"), "utf8")
+            .then(JSON.parse).catch(() => options));
+
+        // minify in.xml with streamOptions.json (or options.json / default options) as a stream and expect stream.xml
         if (await exists(path.join(dir, "stream.xml"))) {
-            t.is(await getStream(createReadStream(path.join(dir, "in.xml"), "utf8").pipe(minifyStream(options))),
+            t.is(await getStream(createReadStream(path.join(dir, "in.xml"), "utf8").pipe(minifyStream(streamOptions))),
                 await fs.readFile(path.join(dir, "stream.xml"), "utf8"));
         } else {
             t.throws(() => minifyStream(options), { message: /cannot be used with streams/ });

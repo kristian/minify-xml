@@ -1,0 +1,4 @@
+<ROOT xmlns:xsi="schema_location" xsi:noNamespaceSchemaLocation='test' xsi:schemaLocation='test'>
+  <anyTag xsi:schemaLocation="test"></anyTag>
+  <anyOtherTag xsi:noNamespaceSchemaLocation="test"></anyOtherTag>
+</ROOT>

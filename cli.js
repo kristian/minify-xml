@@ -28,6 +28,7 @@ const cli = meow(`
 	  --collapse-empty-elements Collapse empty elements
 	  --collapse-whitespace-in-prolog Collapse whitespace in the prolog
 	  --collapse-whitespace-in-doctype Collapse whitespace in the document type declaration
+	  --remove-schema-location-attributes Remove schema location attributes
 	  --remove-unnecessary-standalone-declaration Remove unnecessary standalone in prolog
 	  --remove-unused-namespaces Remove any unused namespaces from tags
 	  --remove-unused-default-namespace Remove unused default namespace declaration
@@ -91,6 +92,9 @@ const cli = meow(`
 		collapseWhitespaceInDocType: {
 			type: "boolean",
 			shortFlag: "collapse-whitespace-in-doctype"
+		},
+		removeSchemaLocationAttributes: {
+			type: "boolean"	
 		},
 		removeUnnecessaryStandaloneDeclaration: {
 			type: "boolean"

@@ -2,9 +2,14 @@
 
 ## `HEAD`
 
+No changes yet
+
+## 4.2.0
+
 - Add NodeJS 20.x to the test matrix
 - Add (this) changelog
 - Add to remove unnecessary standalone declaration from prolog
+- Add option to remove schema location attributes from tags
 
 ## 4.1.0
 

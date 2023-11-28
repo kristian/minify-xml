@@ -9,6 +9,7 @@ export const defaultOptions = {
     collapseWhitespaceInTexts: false, // true / false or 'strict'
     collapseWhitespaceInProlog: true,
     collapseWhitespaceInDocType: true,
+    removeSchemaLocationAttributes: false,
     removeUnnecessaryStandaloneDeclaration: true,
     removeUnusedNamespaces: true,
     removeUnusedDefaultNamespace: true,
@@ -124,6 +125,11 @@ export function minify(xml, options) {
         return xml;
     }
 
+    // remove any xsi:schemaLocation / xsi:noNamespaceSchemaLocation attributes <anyTag xsi:schemaLocation="/schema/" />
+    if (options.removeSchemaLocationAttributes) {
+        xml = replaceInTags(xml, /\s+xsi:(?:noNamespaceS|s)chemaLocation\s*=\s*(?:"[^"]*"|'[^']*')/, replacer(" "));
+    }
+
     // remove / collapse whitespace in tags <anyTag  attributeA  =  "..."  attributeB  =  "..."> ... </anyTag  >
     if (options.collapseWhitespaceInTags) {
         xml = collapseWhitespaceInTags(xml);
@@ -230,8 +236,9 @@ export function minify(xml, options) {
             }
 
             all.forEach((ns, idx) => {
-                if (ns.length === 1) {
-                    return; // already at minimal length
+                // never shorten the special "xsi" namespace or if already at absolute minimal length
+                if (ns === "xsi" || ns.length === 1) {
+                    return;
                 }
 
                 // try to shorten the existing namespace to one character first, if it is occupied already, find the first unused one by brute force
