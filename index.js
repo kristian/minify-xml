@@ -260,7 +260,7 @@ export function minify(xml, options) {
     return xml.trim ? xml.trim() : trim(xml);
 }; export default minify;
 
-import pumpify from "pumpify";
+import pumpify from "pumpify"; // XXX: to be replaced by node:stream compose as soon as it is stable
 import replaceStream from "replacestream"; // note that replacestream does NOT support zero-length regex matches!
 import { PassThrough } from "node:stream";
 

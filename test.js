@@ -6,9 +6,8 @@ import { readFileSync, promises as fs, createReadStream } from "node:fs";
 const exists = path => fs.access(path).then(() => true).catch(() => false);
 
 import { execa } from "execa";
-import getStream from "get-stream";
 import { Readable } from "node:stream";
-import decamelize from "decamelize";
+import { text as getStream } from "node:stream/consumers";
 
 import { fileURLToPath } from "node:url";
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -51,7 +50,9 @@ const buildOptions = flag => allOptions.reduce((options, option) => {
         options[option] = option === flag;
         return options;
     }, {});
-const argumentForOption = (option, value) => `--${ value === false ? 'no-' : String() }${ decamelize(option, { separator: "-" }).replace("c-data", "cdata").replace("doc-type", "doctype") }`;
+const argumentForOption = (option, value) => `--${ value === false ? 'no-' : String() }${
+    option.replace(/([\p{Lowercase_Letter}\d])(\p{Uppercase_Letter})/gu, "$1-$2")
+    .toLowerCase().replace("c-data", "cdata").replace("doc-type", "doctype") }`;
 const buildArguments = options => Object.entries(options).reduce((args, [option, value]) => {
         args.push(argumentForOption(option, value));
         typeof value === "string" && args.push(value);

@@ -6,8 +6,6 @@ import constants from "buffer";
 const { MAX_STRING_LENGTH } = constants;
 
 import meow from "meow";
-import { default as camelCase } from "camelcase";
-import ProgressBar from "progress";
 
 import { default as minify, defaultOptions, minifyStream, defaultStreamOptions, debug as debugMinify } from "./index.js";
 
@@ -158,19 +156,15 @@ if (debug) {
 	// if the debug flag is a string and doesn't contain --debug=true, only debug the single option(s) specified	
 	debugMinify(input && fs.readFileSync(input, "utf8"), !cli.flags.debug.includes("true") ? {
 		...Object.fromEntries(Object.keys(defaultOptions).map(option => [option, false])), // set all to false
-		...Object.fromEntries(cli.flags.debug.map(camelCase).map(option => [option, true])), // set options specified to true
+		...Object.fromEntries(cli.flags.debug.map(option => option.replace(/[-_.\s](.)?/g, // set (camel cased) options specified to true
+			(match, char) => char?.toUpperCase() ?? String())).map(option => [option, true])),
 		...options(defaultOptions) // override any other given options, e.g. --debug=remove-whitespace-between-tags --remove-whitespace-between-tags=strict
     } : options(defaultOptions));
 } else if (cli.flags.stream) {
 	const stream = fs.createReadStream(input, "utf8");
 	if (output && size) {
-		const bar = new ProgressBar(`  minify ${ path.basename(input) } [:bar] :percent ETA: :etas`, {
-			incomplete: " ",
-			width: 20,
-			total: size
-		});
-		stream.on("data", chunk =>
-			bar.tick(chunk.length));
+		let received = 0; stream.on("data", chunk => process.stdout.write(
+			`\rMinifying ${(received += chunk.length) / size * 100 | 0}% ...`));
 	}
 
 	stream.pipe(minifyStream(options(defaultStreamOptions)))

@@ -2,7 +2,8 @@
 
 ## `HEAD`
 
-No changes yet
+- Back to the roots, minimize dependency footprint, similar to how Mathias Bynens handled the library
+- Minimum required node version to execute tests is now 16.7.0, due to the use of `node:stream/consumers`
 
 ## 4.2.0
 
