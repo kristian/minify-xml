@@ -6,7 +6,17 @@ import { readFileSync, promises as fs, createReadStream } from "node:fs";
 const exists = path => fs.access(path).then(() => true).catch(() => false);
 
 import { execa } from "execa";
-import { Readable } from "node:stream";
+import { Readable, Writable } from "node:stream";
+const newWritableStream = () => new Writable({
+    write(chunk, encoding, callback) {
+        (this.chunks ?? (this.chunks = [])).push(Buffer.from(chunk));
+        callback();
+    },
+    final(callback) {
+        this.emit("end");
+        callback();
+    }
+});
 import { text as getStream } from "node:stream/consumers";
 
 import { fileURLToPath } from "node:url";
@@ -17,7 +27,7 @@ const cliPath = path.join(dirname, "cli.js"), cli = async (...options) =>
 import { withFile } from "tmp-promise";
 const xml = readFileSync(xmlPath, "utf8");
 
-import { default as minify, defaultOptions, minifyStream, defaultStreamOptions } from "./index.js";
+import { default as minify, defaultOptions, minifyStream, defaultStreamOptions, minifyPipeline } from "./index.js";
 const minifiedXml = minify(xml), minifiedStreamXml = minify(xml, defaultStreamOptions);
 
 glob.sync("test/*/").forEach(dir => {
@@ -34,10 +44,17 @@ glob.sync("test/*/").forEach(dir => {
 
         // minify in.xml with streamOptions.json (or options.json / default options) as a stream and expect stream.xml
         if (await exists(path.join(dir, "stream.xml"))) {
-            t.is(await getStream(createReadStream(path.join(dir, "in.xml"), "utf8").pipe(minifyStream(streamOptions))),
-                await fs.readFile(path.join(dir, "stream.xml"), "utf8"));
+            const stream = () => createReadStream(path.join(dir, "in.xml"), "utf8"),
+                expected = await fs.readFile(path.join(dir, "stream.xml"), "utf8");
+            t.is(await getStream(stream().pipe(minifyStream(streamOptions))), expected);
+
+            const writeStream = newWritableStream();
+            await minifyPipeline(stream(), writeStream, streamOptions);
+            t.is(Buffer.concat(writeStream.chunks ?? []).toString("utf8"), expected);
         } else {
-            t.throws(() => minifyStream(options), { message: /cannot be used with streams/ });
+            const expected = { message: /cannot be used with streams/ };
+            t.throws(() => minifyStream(streamOptions), expected);
+            await t.throwsAsync(async () => await minifyPipeline(undefined, undefined, streamOptions), expected)
         }
     });
 });

@@ -2,8 +2,13 @@
 
 ## `HEAD`
 
+No changes yet
+
+# 4.3.0
+
 - Back to the roots, minimize dependency footprint, similar to how Mathias Bynens handled the library
 - Minimum required node version to execute tests is now 16.7.0, due to the use of `node:stream/consumers`
+- Asynchronous `minifyPipeline` function utilizing Node.js `node:stream/promises` pipeline
 
 ## 4.2.0
 

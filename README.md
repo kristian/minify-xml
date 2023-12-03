@@ -63,6 +63,14 @@ fs.createReadStream("sitemap.xml", "utf8")
     .pipe(process.stdout);
 ```
 
+Similar to streams, Node.js 15 introduced an asynchronous [`stream.pipeline` API](https://nodejs.org/docs/latest-v18.x/api/stream.html#streampipelinesource-transforms-destination-options) that with `stream/promises` utilizes promises. This way you can utilize the advantages of the streaming API (namely no file size limit) in conjunction with the convenience of using a modern promise based API:
+
+```js
+import { minifyPipeline as minifyXMLPipeline } from "minify-xml";
+
+await minifyXMLPipeline(fs.createReadStream("catalogue.xml", "utf8"), process.stdout, { end: false });
+```
+
 ## Options
 
 You may pass in the following options when calling minify:

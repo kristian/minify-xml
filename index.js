@@ -311,6 +311,10 @@ export function minifyStream(options) {
     }
 };
 
+import { pipeline } from "node:stream/promises";
+export const minifyPipeline = async (source, destination, options) =>
+    await pipeline(source, minifyStream(options), destination, { end: options?.end });
+
 export function debug(xml, options) {
     xml && console.log(`\x1b[90m${xml}\x1b[0m`);
 
