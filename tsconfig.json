@@ -4,7 +4,7 @@
       "allowJs": true,
       "declaration": true,
       "emitDeclarationOnly": true,
-      "outFile": "index",
+      "outDir": ".",
       "declarationMap": true
     }
   }

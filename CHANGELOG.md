@@ -4,6 +4,10 @@
 
 No changes yet
 
+# 4.4.1
+
+- Fix TypeScript support
+
 # 4.4.0
 
 - Add JSDoc / TypeScript support
