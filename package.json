@@ -1,6 +1,6 @@
 {
   "name": "minify-xml",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "Fast XML minifier / compressor / uglifier with a command-line",
   "keywords": [
     "XML",
@@ -17,10 +17,13 @@
   "main": "index.js",
   "bin": "cli.js",
   "scripts": {
+    "prepare": "tsc",
     "test": "c8 ava"
   },
   "files": [
-    "cli.js"
+    "cli.js",
+    "index.d.ts",
+    "index.d.ts.map"
   ],
   "engines": {
     "node": ">=16"
@@ -42,15 +45,17 @@
   },
   "license": "(MIT OR Apache-2.0)",
   "dependencies": {
-    "meow": "^12.1.1",
+    "meow": "^13.2.0",
     "pumpify": "^2.0.1",
     "replacestream": "^4.0.3"
   },
   "devDependencies": {
-    "ava": "^5.3.1",
-    "c8": "^8.0.1",
+    "@types/node": "^20.11.18",
+    "ava": "^6.1.1",
+    "c8": "^9.1.0",
     "execa": "^8.0.1",
     "glob": "^10.3.10",
-    "tmp-promise": "^3.0.3"
+    "tmp-promise": "^3.0.3",
+    "typescript": "^5.3.3"
   }
 }

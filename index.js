@@ -1,4 +1,31 @@
 const strict = "strict", strictOption = option => option === strict && { strict: true };
+
+/**
+ * Options to minify an XML document.
+ * 
+ * @typedef {object} MinifyOptions
+ * @property {boolean} removeComments Remove XML comments <!-- ... -->
+ * @property {boolean|string} removeWhitespaceBetweenTags Remove whitespace only between tags <anyTag/>   <anyOtherTag/> (true / false or 'strict', strict will not consider prolog / doctype, as tags)
+ * @property {boolean} considerPreserveWhitespace Remove / trim whitespace in texts like <anyTag>  foo  </anyTag>
+ * @property {boolean} collapseWhitespaceInTags Remove / collapse whitespace in tags <anyTag  attributeA  =  "..."  attributeB  =  "..."> ... </anyTag  >
+ * @property {boolean} collapseEmptyElements Collapse elements with start / end tags and no content to empty element tags <anyTag anyAttribute = "..." ></anyTag >
+ * @property {boolean|string} trimWhitespaceFromTexts Remove / trim whitespace in texts like <anyTag>  foo  </anyTag> (true / false or 'strict', strict will not consider prolog / doctype, as tags)
+ * @property {boolean|string} collapseWhitespaceInTexts Collapse whitespace in texts like <anyTag>foo    bar   baz</anyTag> (true / false or 'strict', strict will not consider prolog / doctype, as tags)
+ * @property {boolean} collapseWhitespaceInProlog Remove / collapse whitespace in the xml prolog <?xml version = "1.0" ?>
+ * @property {boolean} collapseWhitespaceInDocType Remove / collapse whitespace in the xml document type declaration <!DOCTYPE   DocType   >
+ * @property {boolean} removeSchemaLocationAttributes Remove any xsi:schemaLocation / xsi:noNamespaceSchemaLocation attributes <anyTag xsi:schemaLocation="/schema/" />
+ * @property {boolean} removeUnnecessaryStandaloneDeclaration Remove unnecessary standalone declaration in prolog <?xml standalone = "yes" ?>
+ * @property {boolean} removeUnusedNamespaces Remove unused namespaces and shorten the remaining ones to a minimum length
+ * @property {boolean} removeUnusedDefaultNamespace Remove unused default namespace declaration if no tags with no namespace declaration are present
+ * @property {boolean} shortenNamespaces Shorten existing (non already one character namespaces) to a shorter equivalent
+ * @property {boolean} ignoreCData Ignore CDATA sections <![CDATA[ ... ]]>
+ */
+
+/** 
+ * The default options applied when minifying an XML document.
+ * 
+ * @type {MinifyOptions}
+ */
 export const defaultOptions = {
     removeComments: true,
     removeWhitespaceBetweenTags: true, // true / false or 'strict' (will not consider prolog / doctype, as tags)
@@ -94,6 +121,13 @@ function ignoreCData(replacement) {
     };
 }
 
+/**
+ * Minify an XML document.
+ * 
+ * @param {string} xml The XML document to minify
+ * @param {MinifyOptions} [options=defaultOptions] The options to minify the XML document
+ * @returns {string} The minified XML document
+ */
 export function minify(xml, options) {
     // apply the default options
     options = {
@@ -264,9 +298,27 @@ import pumpify from "pumpify"; // XXX: to be replaced by node:stream compose as 
 import replaceStream from "replacestream"; // note that replacestream does NOT support zero-length regex matches!
 import { PassThrough } from "node:stream";
 
+/**
+ * Options to minify an XML document stream.
+ * 
+ * @typedef {object} MinifyStreamSpecificOptions
+ * @property {number} streamMaxMatchLength The maximum size of matches between chunks
+ */
+
+/**
+ * Options to minify an XML document stream.
+ * 
+ * @typedef {Omit<MinifyOptions, "removeUnnecessaryStandaloneDeclaration" | "removeUnusedNamespaces" | "removeUnusedDefaultNamespace" | "shortenNamespaces" | "ignoreCData"> & MinifyStreamSpecificOptions} MinifyStreamOptions
+ */
+
 // some options require prior knowledge, like 'removeUnnecessaryStandaloneDeclaration' will have to read the DocType first and
 // 'removeUnusedNamespaces' needs to scan the document for namespaces in use, thus some options cannot be used when streaming
 const unsupportedStreamOptions = ["removeUnnecessaryStandaloneDeclaration", "removeUnusedNamespaces", "removeUnusedDefaultNamespace", "shortenNamespaces", "ignoreCData"];
+/** 
+ * The default options applied when minifying an XML document stream.
+ * 
+ * @type {MinifyStreamOptions}
+ */
 export const defaultStreamOptions = {
     ...defaultOptions,
     streamMaxMatchLength: 256 * 1024, // 256 KiB, maximum size of matches between chunks
@@ -274,6 +326,12 @@ export const defaultStreamOptions = {
     ...Object.fromEntries(unsupportedStreamOptions.map(option => [option, false]))
 };
 
+/**
+ * Minify an XML document stream.
+ * 
+ * @param {MinifyStreamOptions} [options=defaultStreamOptions] The options to minify the XML document stream
+ * @returns {import('node:stream').Duplex} A duplex stream that minifies an XML document
+ */
 export function minifyStream(options) {
     // apply the default options
     options = {
@@ -312,9 +370,24 @@ export function minifyStream(options) {
 };
 
 import { pipeline } from "node:stream/promises";
+/**
+ * Minify an XML document pipeline.
+ * 
+ * @param {import("node:stream").PipelineSource<string>} source The source of the XML document pipeline
+ * @param {import("node:stream").PipelineDestination<import("node:stream").PipelineTransformSource<string>, string>} destination The destination of the XML document pipeline
+ * @param {MinifyStreamOptions} [options=defaultStreamOptions] The options to minify the XML document pipeline
+ * @returns {import("node:stream").PipelinePromise<import("node:stream").PipelineDestination<any, string>>} A promise that resolves into the destination of the XML document pipeline
+ */
 export const minifyPipeline = async (source, destination, options) =>
     await pipeline(source, minifyStream(options), destination, { end: options?.end });
 
+/**
+ * Debug minifying an XML document.
+ * 
+ * @ignore
+ * @param {string} xml The XML document to debug minifying
+ * @param {MinifyOptions} [options=defaultOptions] The options to minify the XML document
+ */
 export function debug(xml, options) {
     xml && console.log(`\x1b[90m${xml}\x1b[0m`);
 

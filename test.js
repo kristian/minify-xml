@@ -138,3 +138,15 @@ test("test README.md lists all options", async t => {
         t.regex(readme, new RegExp("`" + option + "`"));
     }
 });
+
+/*
+ * JSDoc Tests
+ */
+test("test JSDoc lists all options", async t => {
+    const source = await fs.readFile(path.join(dirname, "index.js"), "utf8");
+
+    // test if the JSDoc contains all options
+    for (const option of allOptions) {
+        t.regex(source, new RegExp(`@property {.+} ${option} .+`));
+    }
+});

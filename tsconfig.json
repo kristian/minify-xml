@@ -1,0 +1,10 @@
+{
+    "files": ["index.js"],
+    "compilerOptions": {
+      "allowJs": true,
+      "declaration": true,
+      "emitDeclarationOnly": true,
+      "outFile": "index",
+      "declarationMap": true
+    }
+  }

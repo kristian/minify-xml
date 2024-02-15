@@ -4,6 +4,10 @@
 
 No changes yet
 
+# 4.4.0
+
+- Add JSDoc / TypeScript support
+
 # 4.3.0
 
 - Back to the roots, minimize dependency footprint, similar to how Mathias Bynens handled the library
