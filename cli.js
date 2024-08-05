@@ -17,6 +17,7 @@ const cli = meow(`
 	  --stream, -s Stream the input file, instead of reading it
 	  --in-place, -i Save the minified results to the original file
 	  --output, -o Save the minified results to a given output file
+	  --verbose, -v Enables more verbose logging
 
 	Use prefix --no-, false or =false to disable
 	  --remove-comments Remove comments
@@ -111,6 +112,10 @@ const cli = meow(`
 			shortFlag: "ignore-cdata"
 		},
 
+		verbose: {
+			type: "boolean",
+			shortFlag: "v"
+		},
 		debug: {
 			type: "string",
 			isMultiple: true
@@ -133,8 +138,8 @@ const options = options => (Array.isArray(options) ? options : Object.keys(optio
 }, {});
 
 let output;
-if (cli.flags.inPlace || cli.flags.output) {
-	console.log(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
+if ((cli.flags.inPlace || cli.flags.output) && cli.flags.verbose) {
+	console.info(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
 }
 
 let size = NaN;
@@ -147,7 +152,7 @@ try {
 if (!cli.flags.stream) {
 	if (size > MAX_STRING_LENGTH) {
 		// only log to console, if output is set, otherwise the log message ends up in the stdout and might get piped to other applications
-		output && console.log(`Files larger than ${MAX_STRING_LENGTH} bytes require to be streamed, switching to stream mode`);
+		output && cli.flags.verbose && console.warn(`Files larger than ${MAX_STRING_LENGTH} bytes require to be streamed, switching to stream mode`);
 		cli.flags.stream = true;
 	}
 }

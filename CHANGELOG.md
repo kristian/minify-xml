@@ -4,6 +4,10 @@
 
 No changes yet
 
+# 4.5.0
+
+- Make CLI less verbose
+
 # 4.4.1
 
 - Fix TypeScript support
