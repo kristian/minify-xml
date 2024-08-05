@@ -4,6 +4,10 @@
 
 No changes yet
 
+# 4.5.1
+
+- Fix CLI output for non-verbose logging
+
 # 4.5.0
 
 - Make CLI less verbose

@@ -138,8 +138,9 @@ const options = options => (Array.isArray(options) ? options : Object.keys(optio
 }, {});
 
 let output;
-if ((cli.flags.inPlace || cli.flags.output) && cli.flags.verbose) {
-	console.info(`Writing to ${output = cli.flags.inPlace ? input : cli.flags.output}`);
+if (cli.flags.inPlace || cli.flags.output) {
+	output = cli.flags.inPlace ? input : cli.flags.output;
+	cli.flags.verbose && console.info(`Writing to ${output}`);
 }
 
 let size = NaN;
