@@ -4,6 +4,10 @@
 
 No changes yet
 
+# 4.5.2
+
+- Bump dev. dependencies
+
 # 4.5.1
 
 - Fix CLI output for non-verbose logging
